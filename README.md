@@ -27,7 +27,7 @@ No PC também tem login, e o painel só aceita conexão do próprio computador.
 2. **Volume:** no serviço, *Settings → Volumes → Add Volume*, com o caminho de montagem **`/data`**.
    É ali que ficam as contas conectadas, os clipes e as análises (sem volume, tudo some a cada deploy).
 3. **Variáveis** (*Variables*):
-   - `SENHA_PAINEL` = código de instalação, pedido só no primeiro acesso pra criar o administrador (obrigatório enquanto não houver usuário)
+   - `SENHA_PAINEL` (opcional) = código de instalação. Se não criar, o painel gera um sozinho e mostra nos logs do deploy (linha "CODIGO DE INSTALACAO")
    - `BASE_URL` = o endereço público do serviço, ex.: `https://postador-production.up.railway.app`
      (se não colocar, usa o domínio do Railway automaticamente)
 4. **Domínio:** *Settings → Networking → Generate Domain*.
