@@ -244,6 +244,13 @@
     <!-- MÉTRICAS -->
     <section id="aba-metricas" class="aba" hidden>
       <div class="barra-ferramentas">
+        <div class="subabas" id="metricasVisao">
+          <button data-visao="geral" class="ativa">📊 Visão geral</button>
+          <button data-visao="seguidores">👥 Seguidores</button>
+          <button data-visao="mensal">📅 Mensal</button>
+          <button data-visao="comentarios">💬 Comentários</button>
+          <button data-visao="crescer">🚀 Crescer</button>
+        </div>
         <div class="subabas" id="metricasRede"></div>
         <span class="dica" id="metricasQuando"></span>
         <button class="sec mini" id="metricasAtualizar">↻ Atualizar agora</button>
@@ -259,34 +266,6 @@
     <!-- CONTAS -->
     <section id="aba-contas" class="aba" hidden>
       <p class="dica bloco">As credenciais ficam só neste PC, criptografadas e presas ao seu usuário do Windows. O painel nunca mostra um segredo salvo de volta; campo em branco mantém o que já estava salvo.</p>
-      <details class="painel pacote-contas">
-        <summary><b>📦 Levar as contas pra outro painel</b> <span class="dica">(ex.: do PC pro Railway, sem conectar rede por rede)</span></summary>
-        <form id="formEnviarOnline" class="form-acesso envio-online">
-          <h3>🚀 Enviar tudo direto pro painel online</h3>
-          <p class="dica">Manda tudo pro painel do Railway de uma vez: contas das redes, histórico de postagens, clipes com os vídeos, capas, análises do Estúdio, métricas e preferências (e seu usuário, se já tiver criado sua senha).</p>
-          <div class="linha-2">
-            <label class="campo">Endereço do painel online<input name="destino" type="url" placeholder="https://postador-....up.railway.app" required></label>
-            <label class="campo">Código SENHA_PAINEL (do Railway)<input name="codigo" type="password" required autocomplete="off"></label>
-          </div>
-          <button>🚀 Enviar pro painel online</button>
-        </form>
-        <div class="pacote-grade">
-          <form id="formExportar" class="form-acesso">
-            <h3>1. Exportar daqui</h3>
-            <p class="dica">Gera um arquivo com todas as contas conectadas e suas preferências, trancado com uma senha que você escolhe agora.</p>
-            <label class="campo">Senha do arquivo<input type="password" name="senha" minlength="8" required autocomplete="new-password"></label>
-            <label class="campo">Repita<input type="password" name="repete" minlength="8" required autocomplete="new-password"></label>
-            <button>⬇ Baixar arquivo das contas</button>
-          </form>
-          <form id="formImportar" class="form-acesso">
-            <h3>2. Importar no outro painel</h3>
-            <p class="dica">Escolha o arquivo exportado e digite a mesma senha. As contas entram e são testadas na hora.</p>
-            <label class="campo">Arquivo<input type="file" name="arquivo" accept=".json,application/json" required></label>
-            <label class="campo">Senha do arquivo<input type="password" name="senha" required autocomplete="off"></label>
-            <button>⬆ Importar contas</button>
-          </form>
-        </div>
-      </details>
       <div id="contas" class="contas"></div>
     </section>
 

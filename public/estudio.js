@@ -149,7 +149,12 @@ function desenharJob() {
               <img src="/midia/estudio/${j.id}/${esc(t.arquivo)}" alt="Thumbnail ${i + 1}">
               <span class="thumb-textos"><input data-thumb-l1="${i}" value="${esc(t.linha1)}" maxlength="24"><input data-thumb-l2="${i}" value="${esc(t.linha2)}" maxlength="24"></span>
             </label>`).join('')}</div>
-          <button class="sec mini" id="refazerThumbs">↻ Refazer thumbnails com esses textos</button>
+          <div class="linha-capa"><button class="sec mini" id="refazerThumbs">↻ Refazer com esses textos</button>
+            <button class="mini" id="thumbDoPlayer" title="Pause o player no quadro que você quer e clique aqui">📸 Usar o quadro do player</button></div>
+          <div class="config-estudio">
+            <label class="campo">Etiqueta na thumb <small>(vazio = sem)</small><input id="estudioEtiqueta" maxlength="30" placeholder="ex.: GTA RP"></label>
+            <label class="campo">Final do título <small>(vazio = sem)</small><input id="estudioFinal" maxlength="40" placeholder="ex.: | GTA RP"></label>
+          </div>
         </div>
         <div class="bloco-met">
           <h2>Título e descrição</h2>
@@ -163,6 +168,10 @@ function desenharJob() {
       </div>
     </div>`;
   desenharMomentos();
+  api('GET', '/api/preferencias').then((p) => {
+    if ($('#estudioEtiqueta')) $('#estudioEtiqueta').value = p.estudioEtiqueta || '';
+    if ($('#estudioFinal')) $('#estudioFinal').value = p.estudioFinalTitulo || '';
+  }).catch(() => {});
 }
 
 function statusMontagem(c) {
@@ -284,11 +293,16 @@ $('#estudioJob').addEventListener('click', async (e) => {
   }
   const pc = alvo.closest('[data-postar-clipe]');
   if (pc) { escolherClipe(pc.dataset.postarClipe); irPara('postar'); return; }
-  if (alvo.closest('#refazerThumbs')) {
+  if (alvo.closest('#refazerThumbs') || alvo.closest('#thumbDoPlayer')) {
+    const b = alvo.closest('button');
     const textos = (j.thumbs || []).map((t, i) => [$(`[data-thumb-l1="${i}"]`).value.trim(), $(`[data-thumb-l2="${i}"]`).value.trim()]);
-    alvo.disabled = true;
-    alvo.textContent = 'Desenhando…';
-    try { est.job = await api('POST', '/api/estudio/' + j.id + '/thumbs', { textos }); desenharJob(); iniciarPreviewEstudio(); } catch (err) { toast(err.message, true); alvo.disabled = false; }
+    const v = $('#videoEstudio');
+    const tempo = b.id === 'thumbDoPlayer' ? v.currentTime : undefined;
+    if (b.id === 'thumbDoPlayer' && !(tempo > 0)) return toast('Dê play no momento, pause no quadro que você quer e clique de novo.', true);
+    await api('POST', '/api/preferencias', { estudioEtiqueta: $('#estudioEtiqueta').value.trim(), estudioFinalTitulo: $('#estudioFinal').value.trim() }).catch(() => {});
+    b.disabled = true;
+    b.textContent = 'Desenhando…';
+    try { est.job = await api('POST', '/api/estudio/' + j.id + '/thumbs', { textos, tempo }); desenharJob(); iniciarPreviewEstudio(); } catch (err) { toast(err.message, true); b.disabled = false; }
     return;
   }
   if (alvo.closest('#montarVideo') || alvo.closest('#remontar')) {

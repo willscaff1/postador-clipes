@@ -199,6 +199,9 @@ const PREFS_PADRAO = {
   chamada: '💬 E você, o que faria no lugar? Comenta aí 👇\n👉 Segue @willscaff pra não perder os próximos cortes',
   assinatura: '🔴 Live todo dia — twitch.tv/willscaff',
   hashtags: '#capital #complexo #cpx #gtarp #gta #cortes #twitch #willscaff',
+  // Estudio: final do titulo (ex.: "| GTA RP") e etiqueta da thumbnail; vazio = sem
+  estudioFinalTitulo: '',
+  estudioEtiqueta: 'GTA RP',
 };
 function lerPrefs() {
   try { return { ...PREFS_PADRAO, ...JSON.parse(fs.readFileSync(ARQ_PREFS, 'utf8')) }; } catch (e) { return { ...PREFS_PADRAO }; }
@@ -246,33 +249,10 @@ rota('POST', '/api/estudio/:id/clipes', async (req, p) => (await estudio.virarCl
 rota('DELETE', '/api/estudio/:id', (req, p) => { estudio.apagar(p.id); return { ok: true }; });
 rota('GET', '/midia/estudio/:id/:arquivo', (req, p, u, res) => { servirArquivo(req, res, estudio.arquivo(p.id, p.arquivo)); });
 
-// ---------- pacote de contas (levar do PC pro Railway) ----------
-const pacote = require('./lib/pacote');
-const migracao = require('./lib/migracao');
-// transferencia roda em segundo plano; a tela acompanha pelo GET
-let envioOnline = null;
-rota('POST', '/api/contas-pacote/enviar-online', async (req) => {
-  acesso.exigirAdmin(req.quem);
-  if (envioOnline && envioOnline.estado === 'enviando') throw new Error('Ja tem uma transferencia em andamento.');
-  const b = await corpoJson(req);
-  envioOnline = { estado: 'enviando', etapa: 'conferindo o codigo', progresso: 0 };
-  migracao.enviar(b.destino, b.codigo, (etapa, progresso) => Object.assign(envioOnline, { etapa, progresso }))
-    .then((r) => Object.assign(envioOnline, { estado: 'ok', resultado: r, etapa: null }))
-    .catch((e) => Object.assign(envioOnline, { estado: 'erro', erro: esconder(e.message), etapa: null }));
-  return envioOnline;
-});
-rota('GET', '/api/contas-pacote/enviar-online', (req) => { acesso.exigirAdmin(req.quem); return envioOnline || { estado: 'parado' }; });
-rota('POST', '/api/contas-pacote/exportar', async (req, p, u, res) => {
-  const texto = pacote.exportar((await corpoJson(req)).senha);
-  res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Disposition': 'attachment; filename="postador-contas.json"', 'Cache-Control': 'no-store' });
-  res.end(texto);
-});
-rota('POST', '/api/contas-pacote/importar', async (req) => {
-  const b = await corpoJson(req);
-  const r = pacote.importar(b.arquivo, b.senha);
-  for (const plat of r.redes) if (plataformas.obter(plat)) await testarConta(plat);
-  return r;
-});
+// ---------- comentarios (YouTube, Instagram, Facebook) ----------
+const comentarios = require('./lib/comentarios');
+rota('GET', '/api/comentarios', (req, p, u) => comentarios.listar({ atualizar: u.searchParams.get('atualizar') === '1' }));
+rota('POST', '/api/comentarios/:plat/:id/:acao', async (req, p) => comentarios.agir(p.plat, decodeURIComponent(p.id), p.acao, await corpoJson(req)));
 
 // ---------- acesso (usuarios, senha, aparelhos) ----------
 rota('GET', '/api/acesso', (req) => acesso.resumo(req.quem));
@@ -300,10 +280,6 @@ const servidor = http.createServer(async (req, res) => {
     for await (const d of req) { corpo += d; if (corpo.length > 8000) break; }
     return Object.fromEntries(new URLSearchParams(corpo));
   };
-  // painel online recebendo a transferencia do PC (autentica pelo codigo SENHA_PAINEL)
-  if (u.pathname === '/api/migrar/receber' && req.method === 'POST') return migracao.receber(req, res, json);
-  if (u.pathname === '/api/migrar/conferir' && req.method === 'POST') return migracao.conferir(req, res, json);
-  if (u.pathname === '/api/migrar/arquivo' && req.method === 'PUT') return migracao.receberArquivo(req, res, json, u);
   if (u.pathname === '/login' || u.pathname === '/primeiro-acesso') {
     const primeiro = acesso.precisaPrimeiroAcesso();
     if (req.method === 'GET') return html(200, acesso.pagina({ primeiro }));
@@ -379,7 +355,7 @@ clipes.limparTemporarios();
 servidor.listen(PORTA, ambiente.NUVEM ? '0.0.0.0' : '127.0.0.1', () => {
   const f = midia.ferramentas();
   console.log('Postador de clipes: ' + ambiente.urlBase() + (ambiente.NUVEM ? ' (nuvem, porta ' + PORTA + ', dados em ' + ambiente.DADOS + ')' : ''));
-  if (ambiente.NUVEM && !process.env.SENHA_PAINEL) console.log('CODIGO DE INSTALACAO (use no "Enviar pro painel online" do PC, ou como senha do admin no primeiro acesso): ' + ambiente.SENHA);
+  if (ambiente.NUVEM && !process.env.SENHA_PAINEL) console.log('CODIGO DE INSTALACAO (senha do admin no primeiro acesso): ' + ambiente.SENHA);
   if (!f.ffmpeg) console.log('ATENCAO: ffmpeg nao encontrado. Instale com: winget install Gyan.FFmpeg');
   if (!f.ytdlp) console.log('Opcional: yt-dlp nao encontrado (so faz falta pra links fora da Twitch): winget install yt-dlp.yt-dlp');
 });
