@@ -14,6 +14,8 @@ async function api(metodo, url, corpo) {
     body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
   });
   const j = await r.json().catch(() => ({}));
+  // na nuvem: sessao venceu, volta pro login
+  if (r.status === 401) { location.href = '/login'; throw new Error('Sessao expirada.'); }
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
   return j;
 }
@@ -93,6 +95,7 @@ async function carregarEstado() {
   const e = await api('GET', '/api/estado');
   estado.plataformas = e.plataformas;
   estado.ferramentas = e.ferramentas;
+  $('#sairPainel').hidden = !e.login;
   const faltas = [];
   if (!e.ferramentas.ffmpeg) faltas.push('ffmpeg não encontrado — sem ele não dá pra converter nem preparar clipes. Instale com <code>winget install Gyan.FFmpeg</code> e reinicie.');
   $('#avisoFerramentas').innerHTML = faltas.join('<br>');

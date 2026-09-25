@@ -1,5 +1,5 @@
-// Postador de clipes — painel local em http://localhost:8790
-// So escuta no proprio PC (127.0.0.1); nada fica exposto na rede.
+// Postador de clipes — no PC abre em http://localhost:8790 (so escuta no proprio PC).
+// Na nuvem (Railway) escuta em 0.0.0.0 e exige senha: veja lib/ambiente.js.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -12,9 +12,12 @@ const postagens = require('./lib/postagens');
 const midia = require('./lib/midia');
 const twitch = require('./lib/plataformas/twitch');
 
-const PORTA = Number(process.env.PORTA) || 8790;
+const ambiente = require('./lib/ambiente');
+const acesso = require('./lib/acesso');
+
+const PORTA = ambiente.PORTA;
 const PUBLICO = path.join(__dirname, 'public');
-const HOSTS = new Set(['localhost:' + PORTA, '127.0.0.1:' + PORTA]);
+const HOSTS = ambiente.hostsPermitidos();
 const TIPOS = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.ico': 'image/x-icon',
@@ -59,8 +62,8 @@ function paginaSimples(res, titulo, texto, ok) {
   res.end(`<!doctype html><meta charset="utf-8"><title>${esc(titulo)}</title>
 <style>body{font:16px system-ui;background:#111318;color:#e8eaf0;display:grid;place-items:center;min-height:100vh;margin:0}
 main{max-width:520px;padding:32px;border-radius:14px;background:#1b1e26}h1{font-size:20px;color:${ok ? '#4ade80' : '#f87171'}}a{color:#8ab4ff}</style>
-<main><h1>${esc(titulo)}</h1><p>${esc(texto)}</p><p><a href="http://localhost:${PORTA}/#contas">Voltar pro painel</a></p></main>
-${ok ? `<script>setTimeout(()=>location.href='http://localhost:${PORTA}/#contas',1500)</script>` : ''}`);
+<main><h1>${esc(titulo)}</h1><p>${esc(texto)}</p><p><a href="${ambiente.urlBase()}/#contas">Voltar pro painel</a></p></main>
+${ok ? `<script>setTimeout(()=>location.href='${ambiente.urlBase()}/#contas',1500)</script>` : ''}`);
 }
 
 async function testarConta(id) {
@@ -84,7 +87,7 @@ function rota(metodo, padrao, fn) {
 }
 
 rota('GET', '/api/estado', () => ({
-  porta: PORTA, ferramentas: { ...midia.ferramentas(), legendas: require('./lib/legendas').modelo() }, plataformas: plataformas.resumo(PORTA),
+  porta: PORTA, login: acesso.ativo(), nuvem: ambiente.NUVEM, ferramentas: { ...midia.ferramentas(), legendas: require('./lib/legendas').modelo() }, plataformas: plataformas.resumo(PORTA),
 }));
 
 rota('POST', '/api/contas/:id', async (req, p) => {
@@ -124,7 +127,7 @@ rota('GET', '/oauth/:id/iniciar', async (req, p, u, res) => {
   const estado = crypto.randomBytes(16).toString('hex');
   const extra = {};
   let destino;
-  try { destino = await m.urlAutorizacao(cofre.obter(p.id), m.redirect(PORTA), estado, extra); } catch (e) { return paginaSimples(res, 'Nao deu pra conectar', esconder(e.message), false); }
+  try { destino = await m.urlAutorizacao(cofre.obter(p.id), m.redirect(), estado, extra); } catch (e) { return paginaSimples(res, 'Nao deu pra conectar', esconder(e.message), false); }
   pedidosOAuth.set(estado, { plat: p.id, extra, criadoEm: Date.now() });
   res.writeHead(302, { Location: destino });
   res.end();
@@ -145,7 +148,7 @@ rota('GET', '/oauth/:id/callback', async (req, p, u, res) => {
   }
   if (q.error) return paginaSimples(res, 'Autorizacao recusada', q.error_description || q.error, false);
   try {
-    const novos = await m.concluirAutorizacao(cofre.obter(p.id), q, m.redirect(PORTA), pedido.extra);
+    const novos = await m.concluirAutorizacao(cofre.obter(p.id), q, m.redirect(), pedido.extra);
     cofre.atualizar(p.id, novos);
     const t = await testarConta(p.id);
     if (!t.ok) return paginaSimples(res, m.nome + ' conectado, mas o teste falhou', t.mensagem, false);
@@ -250,8 +253,26 @@ rota('DELETE', '/api/postagens/:id', (req, p) => { postagens.apagar(p.id); retur
 
 const servidor = http.createServer(async (req, res) => {
   // Bloqueia sites de fora tentando falar com o painel (DNS rebinding / CSRF).
-  if (!HOSTS.has(req.headers.host)) { res.writeHead(403); return res.end('Host nao permitido'); }
+  if (!ambiente.NUVEM && !HOSTS.has(req.headers.host)) { res.writeHead(403); return res.end('Host nao permitido'); }
   const u = new URL(req.url, 'http://' + req.headers.host);
+  // login (so quando tem senha; na nuvem sempre)
+  if (acesso.ativo()) {
+    if (u.pathname === '/login' && req.method === 'POST') {
+      let corpo = '';
+      for await (const d of req) { corpo += d; if (corpo.length > 4000) break; }
+      const r = acesso.conferir(req, new URLSearchParams(corpo).get('senha') || '');
+      if (!r.ok) { res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(acesso.pagina(r.erro)); }
+      res.writeHead(303, { 'Set-Cookie': acesso.cookieEntrada(), Location: '/' });
+      return res.end();
+    }
+    if (u.pathname === '/login') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(acesso.pagina()); }
+    if (u.pathname === '/sair') { res.writeHead(303, { 'Set-Cookie': acesso.cookieSaida(), Location: '/login' }); return res.end(); }
+    if (!acesso.logado(req)) {
+      if (u.pathname.startsWith('/api/')) return json(res, 401, { erro: 'Sessao expirada. Entre de novo.' });
+      res.writeHead(303, { Location: '/login' });
+      return res.end();
+    }
+  }
   if (u.pathname.startsWith('/api/') && req.method !== 'GET' && req.headers['x-postador'] !== '1') {
     return json(res, 403, { erro: 'Pedido sem o cabecalho do painel.' });
   }
@@ -284,11 +305,15 @@ servidor.on('error', (e) => {
 process.on('uncaughtException', (e) => console.error('Erro inesperado:', esconder(e.stack || e.message)));
 process.on('unhandledRejection', (e) => console.error('Erro inesperado:', esconder((e && e.stack) || e)));
 
+if (ambiente.NUVEM && !acesso.ativo()) {
+  console.error('Na nuvem o painel precisa de senha: crie a variavel SENHA_PAINEL no Railway.');
+  process.exit(1);
+}
 cofre.carregar();
 clipes.limparTemporarios();
-servidor.listen(PORTA, '127.0.0.1', () => {
+servidor.listen(PORTA, ambiente.NUVEM ? '0.0.0.0' : '127.0.0.1', () => {
   const f = midia.ferramentas();
-  console.log('Postador de clipes: http://localhost:' + PORTA);
+  console.log('Postador de clipes: ' + ambiente.urlBase() + (ambiente.NUVEM ? ' (nuvem, porta ' + PORTA + ', dados em ' + ambiente.DADOS + ')' : ''));
   if (!f.ffmpeg) console.log('ATENCAO: ffmpeg nao encontrado. Instale com: winget install Gyan.FFmpeg');
   if (!f.ytdlp) console.log('Opcional: yt-dlp nao encontrado (so faz falta pra links fora da Twitch): winget install yt-dlp.yt-dlp');
 });

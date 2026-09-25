@@ -1,0 +1,6 @@
+dados/
+node_modules/
+.git/
+*.log
+Abrir Postador.cmd
+icone-app.png

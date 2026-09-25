@@ -584,3 +584,7 @@ kbd { font: 600 11px ui-monospace, Consolas, monospace; background: var(--cartao
 #dlgMeme .linha { flex-wrap: wrap; }
 .corte-thumb { overflow: hidden; }
 .corte-thumb img { position: absolute; inset: 0; }
+
+.sair-lateral { margin-top: auto; color: var(--lateral-texto); text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 9px; }
+.sair-lateral:hover { background: var(--lateral2); color: #fff; }
+.sair-lateral:not([hidden]) + .canal-lateral { margin-top: 0; }
