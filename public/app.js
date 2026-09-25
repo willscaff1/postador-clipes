@@ -97,6 +97,7 @@ async function carregarEstado() {
   estado.plataformas = e.plataformas;
   estado.ferramentas = e.ferramentas;
   estado.eu = e.eu;
+  document.body.classList.toggle('na-nuvem', !!e.nuvem);
   if (e.eu) {
     $('#usuarioLateral').hidden = false;
     $('#nomeUsuario').textContent = e.eu.nome;
@@ -1250,4 +1251,17 @@ $('#formImportar').addEventListener('submit', async (e) => {
     await carregarEstado();
   } catch (err) { toast(err.message, true); }
   b.disabled = false; b.textContent = '⬆ Importar contas';
+});
+
+$('#formEnviarOnline').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  const b = $('button', e.target);
+  b.disabled = true; b.textContent = 'Enviando…';
+  try {
+    const r = await api('POST', '/api/contas-pacote/enviar-online', f);
+    e.target.codigo.value = '';
+    toast('Pronto! Foram ' + r.usuarios.length + ' usuário(s) e ' + r.redes.length + ' conta(s). Entre no painel online com o mesmo usuário e senha.');
+  } catch (err) { toast(err.message, true); }
+  b.disabled = false; b.textContent = '🚀 Enviar pro painel online';
 });

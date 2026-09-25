@@ -261,6 +261,15 @@
       <p class="dica bloco">As credenciais ficam só neste PC, criptografadas e presas ao seu usuário do Windows. O painel nunca mostra um segredo salvo de volta; campo em branco mantém o que já estava salvo.</p>
       <details class="painel pacote-contas">
         <summary><b>📦 Levar as contas pra outro painel</b> <span class="dica">(ex.: do PC pro Railway, sem conectar rede por rede)</span></summary>
+        <form id="formEnviarOnline" class="form-acesso envio-online">
+          <h3>🚀 Enviar tudo direto pro painel online</h3>
+          <p class="dica">Manda seu perfil (mesmo usuário e senha), os outros usuários e todas as contas das redes pro painel do Railway, de uma vez.</p>
+          <div class="linha-2">
+            <label class="campo">Endereço do painel online<input name="destino" type="url" placeholder="https://postador-....up.railway.app" required></label>
+            <label class="campo">Código SENHA_PAINEL (do Railway)<input name="codigo" type="password" required autocomplete="off"></label>
+          </div>
+          <button>🚀 Enviar pro painel online</button>
+        </form>
         <div class="pacote-grade">
           <form id="formExportar" class="form-acesso">
             <h3>1. Exportar daqui</h3>

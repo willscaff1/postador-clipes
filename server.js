@@ -248,6 +248,8 @@ rota('GET', '/midia/estudio/:id/:arquivo', (req, p, u, res) => { servirArquivo(r
 
 // ---------- pacote de contas (levar do PC pro Railway) ----------
 const pacote = require('./lib/pacote');
+const migracao = require('./lib/migracao');
+rota('POST', '/api/contas-pacote/enviar-online', async (req) => { acesso.exigirAdmin(req.quem); const b = await corpoJson(req); return migracao.enviar(b.destino, b.codigo); });
 rota('POST', '/api/contas-pacote/exportar', async (req, p, u, res) => {
   const texto = pacote.exportar((await corpoJson(req)).senha);
   res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Disposition': 'attachment; filename="postador-contas.json"', 'Cache-Control': 'no-store' });
@@ -286,6 +288,8 @@ const servidor = http.createServer(async (req, res) => {
     for await (const d of req) { corpo += d; if (corpo.length > 8000) break; }
     return Object.fromEntries(new URLSearchParams(corpo));
   };
+  // painel online recebendo a transferencia do PC (autentica pelo codigo SENHA_PAINEL)
+  if (u.pathname === '/api/migrar/receber' && req.method === 'POST') return migracao.receber(req, res, json);
   if (u.pathname === '/login' || u.pathname === '/primeiro-acesso') {
     const primeiro = acesso.precisaPrimeiroAcesso();
     if (req.method === 'GET') return html(200, acesso.pagina({ primeiro }));
