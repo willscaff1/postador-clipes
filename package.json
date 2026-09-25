@@ -1,0 +1,13 @@
+{
+  "name": "postador-clipes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Painel local pra postar clipes no YouTube, Instagram, TikTok, Facebook e X",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

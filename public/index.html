@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Postador de Clipes</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-clipes" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4l2 5M14 4l2 5"/></symbol>
+    <symbol id="i-postar" viewBox="0 0 24 24"><path d="M21 3 10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></symbol>
+    <symbol id="i-contas" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+    <symbol id="i-historico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+    <symbol id="i-lives" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="m16 10 6-3v10l-6-3"/></symbol>
+    <symbol id="i-metricas" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+    <symbol id="i-estudio" viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M19 14l.9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  </svg>
+
+  <aside class="lateral" id="lateral">
+    <div class="marca">
+      <span class="logo"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+      <div><b>Postador</b><small>de Clipes</small></div>
+    </div>
+    <nav class="abas" role="tablist">
+      <span class="rotulo-menu">Menu</span>
+      <button data-aba="clipes" class="ativa"><svg class="ic"><use href="#i-clipes"/></svg><span>Clipes</span></button>
+      <button data-aba="postar"><svg class="ic"><use href="#i-postar"/></svg><span>Postar</span></button>
+      <button data-aba="lives"><svg class="ic"><use href="#i-lives"/></svg><span>Lives</span> <span id="pilulaAoVivo" class="pilula ao-vivo"></span></button>
+      <button data-aba="estudio"><svg class="ic"><use href="#i-estudio"/></svg><span>Estúdio</span> <span id="pilulaEstudio" class="pilula"></span></button>
+      <button data-aba="metricas"><svg class="ic"><use href="#i-metricas"/></svg><span>Métricas</span></button>
+      <button data-aba="historico"><svg class="ic"><use href="#i-historico"/></svg><span>Histórico</span> <span id="contagemEnvios" class="pilula"></span></button>
+      <button data-aba="contas"><svg class="ic"><use href="#i-contas"/></svg><span>Contas</span> <span id="contagemContas" class="pilula"></span></button>
+    </nav>
+    <div class="redes-lateral">
+      <span class="rotulo-menu">Redes</span>
+      <ul id="redesLateral"></ul>
+    </div>
+    <a class="canal-lateral" href="https://twitch.tv/willscaff" target="_blank" rel="noopener"><i></i>twitch.tv/willscaff</a>
+  </aside>
+  <div class="veu" id="veu"></div>
+
+  <div class="conteudo">
+  <header class="cabecalho">
+    <button class="sec icone" id="abrirMenu" aria-label="Abrir menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+    <div>
+      <h1 id="tituloPagina">Clipes</h1>
+      <p id="subtituloPagina">Traga clipes do PC, da Twitch ou de um link.</p>
+    </div>
+  </header>
+
+  <div id="avisoFerramentas" class="faixa" hidden></div>
+
+  <main>
+    <!-- CLIPES -->
+    <section id="aba-clipes" class="aba">
+      <div class="painel">
+        <div class="subabas">
+          <button data-fonte="pc" class="ativa">Do PC</button>
+          <button data-fonte="twitch">Da Twitch</button>
+          <button data-fonte="link">De um link</button>
+        </div>
+
+        <div data-fonte-painel="pc">
+          <form class="linha rapido" data-rapido="caminho">
+            <input name="valor" placeholder="Cole o caminho do vídeo — ex.: C:\Users\...\Videos\clipe.mp4" required>
+            <button>Trazer e postar</button>
+          </form>
+          <p class="dica">No Explorador: clique no vídeo com o botão direito &gt; <b>Copiar como caminho</b> e cole aqui.</p>
+          <label id="soltar" class="soltar">
+            <input type="file" id="arquivo" accept="video/*,.mkv,.flv,.ts" multiple hidden>
+            <strong>Arraste vídeos aqui</strong> ou clique pra escolher
+            <small>MP4, MOV, MKV (OBS), WEBM… convertido sozinho quando precisa</small>
+          </label>
+          <div id="envios"></div>
+          <details class="navegador" id="navegadorPc">
+            <summary>Ou procurar numa pasta do PC (sem copiar o arquivo)</summary>
+            <div class="linha">
+              <input id="pastaPc" placeholder="C:\Users\...\Videos">
+              <button id="abrirPasta" class="sec">Abrir</button>
+              <button id="subirPasta" class="sec" title="Pasta de cima">↑</button>
+            </div>
+            <ul id="listaPasta" class="lista-pasta"></ul>
+          </details>
+        </div>
+
+        <div data-fonte-painel="twitch" hidden>
+          <form class="linha rapido" data-rapido="link">
+            <input name="valor" placeholder="Cole o link do clipe — ex.: https://clips.twitch.tv/..." required>
+            <button>Trazer e postar</button>
+          </form>
+          <label class="check"><input type="checkbox" id="verticalTwitch" checked> Usar a versão vertical da Twitch quando o clipe tiver (câmera e jogo já montados no editor de clipes)</label>
+          <p class="dica">Ou procure pelos clipes do canal:</p>
+          <form id="formTwitch" class="linha">
+            <input id="canalTwitch" placeholder="canal da Twitch (ex.: gaules)" required>
+            <select id="diasTwitch">
+              <option value="1">Últimas 24h</option>
+              <option value="7" selected>Últimos 7 dias</option>
+              <option value="30">Últimos 30 dias</option>
+              <option value="3650">Todos</option>
+            </select>
+            <button>Buscar clipes</button>
+          </form>
+          <p class="dica" id="dicaTwitch"></p>
+          <div id="clipesTwitch" class="grade-twitch"></div>
+        </div>
+
+        <div data-fonte-painel="link" hidden>
+          <form id="formLink" class="linha">
+            <input id="urlLink" placeholder="https://clips.twitch.tv/...  ou  twitch.tv/canal/clip/..." required>
+            <button>Baixar</button>
+          </form>
+          <p class="dica" id="dicaLink">Clipe da Twitch baixa direto na melhor qualidade. YouTube, Kick, VOD e outros sites precisam do yt-dlp.</p>
+        </div>
+      </div>
+
+      <div class="cabecalho-secao">
+        <h2>Seus clipes</h2>
+        <span class="dica" id="totalClipes"></span>
+      </div>
+      <div id="biblioteca" class="grade"></div>
+    </section>
+
+    <!-- POSTAR -->
+    <section id="aba-postar" class="aba" hidden>
+      <div id="semClipe" class="vazio">
+        <p>Escolha um clipe na aba <b>Clipes</b> e clique em <b>Postar</b>.</p>
+      </div>
+      <div id="esperandoClipe" class="vazio" hidden></div>
+      <div id="formPostar" class="postar" hidden>
+        <div class="previa">
+          <video id="videoPostar" controls playsinline preload="metadata"></video>
+          <div id="infoPostar" class="dica"></div>
+          <button id="trocarClipe" class="sec">Trocar clipe</button>
+          <div class="editor-capa">
+            <h3>Capa</h3>
+            <div class="capa-corpo">
+              <div class="capa-img"><img id="capaImg" alt="Capa do clipe" hidden><span id="capaVazia" class="dica">Sem capa: cada rede escolhe sozinha.</span></div>
+              <div class="capa-controles">
+                <button type="button" class="sec mini" id="capaQuadro">📸 Usar o quadro atual do vídeo</button>
+                <label class="campo">Texto na capa <small>(opcional)</small>
+                  <input id="capaTexto" maxlength="60" placeholder="Ex.: ELE NÃO ESPERAVA ISSO">
+                </label>
+                <div class="linha-capa">
+                  <label class="campo">Cor <select id="capaCor"><option value="amarelo">Amarelo</option><option value="branco">Branco</option><option value="verde">Verde</option></select></label>
+                  <label class="campo">Posição <select id="capaPosicao"><option value="meio">No meio</option><option value="topo">Em cima</option><option value="baixo">Embaixo</option></select></label>
+                </div>
+                <div class="linha-capa">
+                  <button type="button" class="sec mini" id="capaUsarGancho">Usar o gancho</button>
+                  <button type="button" class="mini" id="capaGerar">Gerar capa</button>
+                </div>
+                <label class="sec mini arquivo-capa">🖼 Enviar imagem do PC<input type="file" id="capaArquivo" accept="image/png,image/jpeg,image/webp" hidden></label>
+                <button type="button" class="sec mini" id="capaTirar" hidden>Tirar capa</button>
+                <div id="capaInfo" class="dica"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="campos-postar">
+          <h2>Onde postar</h2>
+          <div id="destinos" class="destinos"></div>
+
+          <label class="campo">Título com gancho <small>(primeira linha do post; no YouTube vira o título do vídeo)</small>
+            <input id="titulo" maxlength="100">
+          </label>
+          <div class="ganchos">
+            <span class="dica">Ideias de gancho — clique pra usar:</span>
+            <div id="ganchos" class="chips"></div>
+            <button type="button" class="sec mini" id="maisGanchos">🔄 Outras ideias</button>
+          </div>
+          <label class="campo">Contexto <small>(o que rolou no clipe, vai embaixo do gancho)</small>
+            <textarea id="legenda" rows="2" maxlength="1500"></textarea>
+          </label>
+          <label class="campo">Chamada pra ação <small>(puxa comentário e seguidor; fica salva como padrão)</small>
+            <textarea id="chamada" rows="2" maxlength="400"></textarea>
+          </label>
+          <label class="campo">Assinatura <small>(linha fixa de todo post)</small>
+            <input id="assinatura" maxlength="200">
+          </label>
+          <label class="campo">Hashtags <small>(separadas por espaço; o # é colocado sozinho)</small>
+            <input id="hashtags">
+          </label>
+          <label class="check"><input type="checkbox" id="salvarPadrao" checked> Guardar assinatura e hashtags como padrão pros próximos posts</label>
+          <details class="previa-texto" open>
+            <summary>Como o post vai sair</summary>
+            <pre id="previaTexto"></pre>
+          </details>
+
+          <div id="opcoesDestinos"></div>
+
+          <div class="acoes">
+            <button id="botaoPostar" class="grande">Postar</button>
+            <span id="resumoPostar" class="dica"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVES -->
+    <section id="aba-lives" class="aba" hidden>
+      <div class="barra-ferramentas">
+        <div class="subabas" id="livesFonte">
+          <button data-fonte-live="twitch" class="ativa">Twitch</button>
+          <button data-fonte-live="kick">Kick</button>
+        </div>
+        <div class="subabas" id="livesVisao">
+          <button data-visao="lives" class="ativa">Lives gravadas</button>
+          <button data-visao="clipes">Clipes do canal</button>
+        </div>
+        <button class="sec mini" id="livesAtualizar">↻ Atualizar</button>
+      </div>
+      <div id="faixaAoVivo" class="faixa-ao-vivo" hidden></div>
+      <div id="livesConteudo"></div>
+    </section>
+
+    <!-- ESTÚDIO -->
+    <section id="aba-estudio" class="aba" hidden>
+      <div id="estudioLista">
+        <div class="painel">
+          <h2>Nova análise</h2>
+          <p class="dica bloco">Escolha uma live: o sistema ouve e assiste ela inteira, acha os momentos fortes (tiro, fuga, reação…), monta um vídeo de 20–30 min pro YouTube e cria as thumbnails.</p>
+          <div class="barra-ferramentas">
+            <div class="subabas" id="estudioFonte">
+              <button data-fonte-estudio="twitch" class="ativa">Twitch</button>
+              <button data-fonte-estudio="kick">Kick</button>
+            </div>
+            <div class="subabas" id="estudioConteudo">
+              <button data-conteudo="rp" class="ativa">🎮 GTA RP</button>
+              <button data-conteudo="react">📺 React</button>
+            </div>
+          </div>
+          <div id="estudioLives" class="lista-compacta"></div>
+        </div>
+        <div class="cabecalho-secao"><h2>Análises</h2></div>
+        <div id="estudioJobs"></div>
+      </div>
+      <div id="estudioJob" hidden></div>
+    </section>
+
+    <!-- MÉTRICAS -->
+    <section id="aba-metricas" class="aba" hidden>
+      <div class="barra-ferramentas">
+        <div class="subabas" id="metricasRede"></div>
+        <span class="dica" id="metricasQuando"></span>
+        <button class="sec mini" id="metricasAtualizar">↻ Atualizar agora</button>
+      </div>
+      <div id="metricasConteudo"><div class="vazio"><i class="giro"></i>Buscando os números…</div></div>
+    </section>
+
+    <!-- CONTAS -->
+    <section id="aba-contas" class="aba" hidden>
+      <p class="dica bloco">As credenciais ficam só neste PC, criptografadas e presas ao seu usuário do Windows. O painel nunca mostra um segredo salvo de volta; campo em branco mantém o que já estava salvo.</p>
+      <div id="contas" class="contas"></div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section id="aba-historico" class="aba" hidden>
+      <div id="historico"></div>
+    </section>
+  </main>
+  </div>
+
+  <dialog id="dlgPreparar">
+    <form method="dialog" id="formPreparar">
+      <h2>Preparar clipe</h2>
+      <video id="videoPreparar" controls playsinline preload="metadata"></video>
+      <div class="linha">
+        <label class="campo">Início (s)
+          <span class="linha"><input id="prepInicio" type="number" min="0" step="0.1" value="0"><button type="button" class="sec" id="marcarInicio">agora</button></span>
+        </label>
+        <label class="campo">Fim (s) <small>0 = até o final</small>
+          <span class="linha"><input id="prepFim" type="number" min="0" step="0.1" value="0"><button type="button" class="sec" id="marcarFim">agora</button></span>
+        </label>
+      </div>
+      <fieldset class="formatos">
+        <legend>Formato</legend>
+        <label><input type="radio" name="formato" value="vertical-desfocado" checked> <b>Vertical 9:16</b> com fundo desfocado <small>mostra a tela inteira</small></label>
+        <label><input type="radio" name="formato" value="vertical-cortado"> <b>Vertical 9:16</b> cortando as laterais <small>preenche a tela, perde as bordas</small></label>
+        <label><input type="radio" name="formato" value="original"> <b>Manter o formato</b> <small>só corta o trecho</small></label>
+      </fieldset>
+      <fieldset class="formatos">
+        <legend>Legenda automática (opcional)</legend>
+        <label><input type="checkbox" id="prepLegenda"> <b>Gerar legenda da fala</b> <small>o PC ouve o clipe e escreve na tela, 3 palavras por vez</small></label>
+        <div class="linha">
+          <label class="campo">Cor <select id="prepEstilo">
+            <option value="amarelo">Amarela</option><option value="branco">Branca</option><option value="verde">Verde</option></select></label>
+          <label class="campo">Posição <select id="prepPosicao">
+            <option value="meio">No meio (entre câmera e jogo)</option><option value="baixo">Embaixo</option></select></label>
+        </div>
+        <small class="dica" id="dicaLegenda"></small>
+      </fieldset>
+      <p class="dica">Cria um clipe novo; o original continua na biblioteca.</p>
+      <div class="acoes">
+        <button value="cancelar" class="sec" formnovalidate>Cancelar</button>
+        <button value="ok" id="confirmarPreparar">Gerar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgConferir" class="dlg-largo">
+    <form method="dialog">
+      <h2>Conferir postagem</h2>
+      <p class="dica">É exatamente isso que vai sair em cada rede. Pra mudar algo, volte e edite o painel da rede.</p>
+      <div id="conferirConteudo"></div>
+      <div class="acoes">
+        <button value="voltar" class="sec" formnovalidate>Voltar e editar</button>
+        <button value="publicar">Publicar agora</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgApagar">
+    <form method="dialog">
+      <h2>Apagar das redes</h2>
+      <p class="dica">Apaga o post publicado na própria rede. Não tem volta: views, curtidas e comentários somem junto.</p>
+      <div id="apagarLista" class="apagar-lista"></div>
+      <div id="apagarResultado"></div>
+      <div class="acoes">
+        <button value="cancelar" class="sec" formnovalidate>Cancelar</button>
+        <button type="button" id="apagarConfirmar" class="botao-perigo">Apagar das redes marcadas</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgLive" class="dlg-live">
+    <form method="dialog">
+      <div class="dlg-topo">
+        <div><h2 id="liveTitulo">Live</h2><p class="dica" id="liveInfo"></p></div>
+        <button value="fechar" class="sec icone" aria-label="Fechar">✕</button>
+      </div>
+      <div class="editor-live">
+        <div class="player-live">
+          <div class="video-caixa">
+            <video id="videoLive" controls playsinline></video>
+            <video id="videoExtra" class="video-extra" playsinline hidden></video>
+            <div id="recortes" class="recortes" hidden>
+              <div class="caixa-recorte jogo" data-caixa="jogo"><span>JOGO</span><i class="canto" data-canto="jogo"></i></div>
+              <div class="caixa-recorte cam" data-caixa="cam"><span>CÂMERA</span><i class="canto" data-canto="cam"></i></div>
+            </div>
+          </div>
+          <div class="linha-tempo" id="linhaTempo"><div id="blocosTrechos"></div><div class="trecho marcando" id="trechoMarcado"></div><div class="agulha" id="agulha"></div></div>
+          <div class="zoom-tempo" id="zoomTempo" title="Zoom de 2 minutos em volta do ponto atual: arraste as alças pra ajustar o corte">
+            <div class="zoom-escala" id="zoomEscala"></div>
+            <div class="zoom-trecho" id="zoomTrecho"><span class="alca" data-alca="ini"></span><span class="alca" data-alca="fim"></span></div>
+            <div class="agulha" id="zoomAgulha"></div>
+          </div>
+          <div class="pulos">
+            <button type="button" class="sec mini" data-pulo="-60">−1 min</button>
+            <button type="button" class="sec mini" data-pulo="-10">−10 s</button>
+            <button type="button" class="sec mini" data-pulo="-2">−2 s</button>
+            <button type="button" class="sec mini" data-pulo="-0.0333" title="Quadro anterior (,)">◂ quadro</button>
+            <span class="relogio" id="relogioLive">0:00:00</span>
+            <button type="button" class="sec mini" data-pulo="0.0333" title="Próximo quadro (.)">quadro ▸</button>
+            <button type="button" class="sec mini" data-pulo="2">+2 s</button>
+            <button type="button" class="sec mini" data-pulo="10">+10 s</button>
+            <button type="button" class="sec mini" data-pulo="60">+1 min</button>
+          </div>
+          <div class="marcador">
+            <button type="button" class="sec" id="marcarInicio">[ Início aqui</button>
+            <input id="corteInicio" placeholder="0:00:00" aria-label="Início">
+            <span class="seta">→</span>
+            <input id="corteFim" placeholder="0:00:30" aria-label="Fim">
+            <button type="button" class="sec" id="marcarFim">Fim aqui ]</button>
+            <button type="button" id="adicionarCorte">＋ Adicionar corte</button>
+          </div>
+          <p class="atalhos">Atalhos: <kbd>Espaço</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> 1 s · <kbd>Shift</kbd>+<kbd>←</kbd><kbd>→</kbd> 10 s · <kbd>,</kbd><kbd>.</kbd> quadro · <kbd>I</kbd> início · <kbd>O</kbd> fim · <kbd>A</kbd> adicionar</p>
+          <p class="dica" id="corteDuracao">Pause no começo do lance e clique em "Início aqui"; depois no fim e em "Adicionar corte". Repita pra montar a sequência.</p>
+
+          <div class="sequencia">
+            <div class="sequencia-topo">
+              <b>Sequência de cortes</b>
+              <span class="dica" id="sequenciaTotal">arraste pra mudar a ordem</span>
+              <label class="mini-campo">Transição
+                <select id="transicaoPadrao">
+                  <option value="corte">✂ Corte seco</option><option value="fade" selected>◐ Dissolver</option><option value="fadeblack">■ Escurecer</option>
+                  <option value="fadewhite">□ Clarão</option><option value="slideleft">⇠ Deslizar</option><option value="slideup">⇡ Subir</option>
+                  <option value="smoothleft">↞ Empurrar</option><option value="zoomin">⊕ Zoom</option><option value="circleopen">◎ Círculo</option>
+                  <option value="pixelize">▦ Pixelado</option><option value="radial">◴ Radial</option><option value="wipeleft">▶ Cortina</option>
+                </select>
+                <select id="transicaoDuracao"><option value="0.3">0,3 s</option><option value="0.5" selected>0,5 s</option><option value="0.8">0,8 s</option><option value="1">1 s</option></select>
+              </label>
+              <button type="button" class="sec mini" id="botaoMeme">＋ Vídeo de fora (meme)</button>
+              <button type="button" class="sec mini" id="assistirSequencia">▶ Assistir a sequência</button>
+            </div>
+            <div class="faixa-cortes" id="faixaCortes"><div class="faixa-vazia">Os cortes que você adicionar aparecem aqui.</div></div>
+          </div>
+        </div>
+        <div class="corte-live">
+          <h3>Salvar</h3>
+          <label class="campo">Nome do clipe <input id="corteNome" maxlength="120"></label>
+          <div class="formatos-saida">
+            <span class="rotulo-campo">Salvar em</span>
+            <label class="chip-check"><input type="checkbox" id="saida916" checked> 📱 9:16 celular</label>
+            <label class="chip-check"><input type="checkbox" id="saida169"> 🖥 16:9 original</label>
+          </div>
+          <div id="painel916" class="painel-916">
+            <label class="campo">Layout do 9:16
+              <select id="layoutModo">
+                <option value="faixa-topo">Câmera em cima + jogo</option>
+                <option value="faixa-baixo">Jogo + câmera embaixo</option>
+                <option value="sobre">Câmera sobre o jogo (redonda, quadrada…)</option>
+                <option value="sem-camera">Sem câmera (só o jogo)</option>
+                <option value="desfocado">Tela inteira com fundo desfocado</option>
+                <option value="cortado">Só o centro da tela</option>
+              </select>
+            </label>
+            <div class="previa-916-caixa"><canvas id="previa916" width="270" height="480"></canvas><span class="dica" id="previaDica">prévia do celular</span></div>
+            <div class="op-layout" data-para="faixa-topo faixa-baixo">
+              <label class="campo">Altura da câmera <span id="valorProporcao" class="dica">35%</span><input type="range" id="layoutProporcao" min="20" max="55" value="35"></label>
+            </div>
+            <div class="op-layout" data-para="sobre">
+              <span class="rotulo-campo">Formato da câmera</span>
+              <div class="grupo-botoes" id="layoutForma">
+                <button type="button" data-forma="redonda">● Redonda</button>
+                <button type="button" data-forma="quadrada">▢ Quadrada</button>
+                <button type="button" data-forma="retangular">▭ Retangular</button>
+              </div>
+              <label class="campo">Tamanho <span id="valorTamanho" class="dica">45%</span><input type="range" id="layoutTamanho" min="15" max="90" value="45"></label>
+              <label class="campo">Borda
+                <select id="layoutBorda"><option value="branca">Branca</option><option value="roxa">Roxa</option><option value="preta">Preta</option><option value="nenhuma">Sem borda</option></select>
+              </label>
+              <p class="dica">Arraste a câmera na prévia pra mudar de lugar.</p>
+            </div>
+            <label class="check op-layout" data-para="faixa-topo faixa-baixo sobre sem-camera"><input type="checkbox" id="layoutEsconder" checked> Esconder a câmera que aparece dentro do jogo</label>
+            <button type="button" class="sec op-layout" id="ajustarRecortes" data-para="faixa-topo faixa-baixo sobre sem-camera">✥ Ajustar recortes no vídeo</button>
+          </div>
+          <p class="dica">A sequência vira um vídeo só, na ordem da faixa e com as transições escolhidas. Vai pra aba Clipes pronta pra postar.</p>
+          <div id="cortesFeitos" class="cortes-feitos"></div>
+        </div>
+      </div>
+      <div class="barra-salvar">
+        <span id="totalBarra" class="dica">Nenhum corte ainda</span>
+        <button type="button" id="salvarSeparados" class="sec" disabled>Salvar cada corte separado</button>
+        <button type="button" id="salvarSequencia" disabled>💾 Salvar sequência como 1 vídeo</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgMeme">
+    <form method="dialog">
+      <div class="dlg-topo"><h2>Vídeo de fora</h2><button value="fechar" class="sec icone" aria-label="Fechar">✕</button></div>
+      <p class="dica">Meme, reação, vinheta… Escolha um da sua biblioteca, envie do PC ou cole um link (YouTube, TikTok, Twitter…).</p>
+      <div class="linha">
+        <label class="sec mini arquivo-capa">📁 Enviar do PC<input type="file" id="memeArquivo" accept="video/*" hidden></label>
+        <input id="memeLink" placeholder="ou cole o link do vídeo">
+        <button type="button" class="mini" id="memeLinkBotao">Trazer</button>
+      </div>
+      <p class="dica" id="memeAviso"></p>
+      <div id="listaMemes" class="lista-memes"></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js"></script>
+  <script src="app.js"></script>
+  <script src="lives.js"></script>
+  <script src="layout.js"></script>
+  <script src="metricas.js"></script>
+  <script src="estudio.js"></script>
+</body>
+</html>
