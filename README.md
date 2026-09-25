@@ -4,6 +4,12 @@ Painel pra trazer clipes (PC, Twitch, Kick, links), cortar lives com transiçõe
 montar vídeos longos automáticos com thumbnail e postar no YouTube, Instagram, Facebook,
 TikTok e X, com métricas de tudo.
 
+## Login
+
+No primeiro acesso a tela pede pra criar o administrador (na nuvem, com o codigo `SENHA_PAINEL`).
+Depois, na aba **Acesso**: trocar senha, ver e desconectar aparelhos, criar usuarios (admin ou editor).
+Editor corta, posta e ve metricas, mas nao mexe nas contas das redes nem em usuarios.
+
 ## Rodar no PC
 
 ```
@@ -19,11 +25,11 @@ No PC não tem senha: o painel só aceita conexão do próprio computador.
 2. **Volume:** no serviço, *Settings → Volumes → Add Volume*, com o caminho de montagem **`/data`**.
    É ali que ficam as contas conectadas, os clipes e as análises (sem volume, tudo some a cada deploy).
 3. **Variáveis** (*Variables*):
-   - `SENHA_PAINEL` = uma senha forte (obrigatória; sem ela o servidor não sobe)
+   - `SENHA_PAINEL` = código de instalação, pedido só no primeiro acesso pra criar o administrador (obrigatório enquanto não houver usuário)
    - `BASE_URL` = o endereço público do serviço, ex.: `https://postador-production.up.railway.app`
      (se não colocar, usa o domínio do Railway automaticamente)
 4. **Domínio:** *Settings → Networking → Generate Domain*.
-5. Entre no endereço, digite a senha e conecte as redes de novo na aba **Contas**
+5. Entre no endereço, crie o administrador (usuário + senha + o código) e conecte as redes de novo na aba **Contas**
    (as contas do PC não vão junto, por segurança).
 
 ### Endereços de retorno (login das redes)

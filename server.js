@@ -86,8 +86,9 @@ function rota(metodo, padrao, fn) {
   rotas.push({ metodo, re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn });
 }
 
-rota('GET', '/api/estado', () => ({
-  porta: PORTA, login: acesso.ativo(), nuvem: ambiente.NUVEM, ferramentas: { ...midia.ferramentas(), legendas: require('./lib/legendas').modelo() }, plataformas: plataformas.resumo(PORTA),
+rota('GET', '/api/estado', (req) => ({
+  eu: acesso.publico(req.quem.usuario),
+  porta: PORTA, nuvem: ambiente.NUVEM, ferramentas: { ...midia.ferramentas(), legendas: require('./lib/legendas').modelo() }, plataformas: plataformas.resumo(PORTA),
 }));
 
 rota('POST', '/api/contas/:id', async (req, p) => {
@@ -245,6 +246,15 @@ rota('POST', '/api/estudio/:id/clipes', async (req, p) => (await estudio.virarCl
 rota('DELETE', '/api/estudio/:id', (req, p) => { estudio.apagar(p.id); return { ok: true }; });
 rota('GET', '/midia/estudio/:id/:arquivo', (req, p, u, res) => { servirArquivo(req, res, estudio.arquivo(p.id, p.arquivo)); });
 
+// ---------- acesso (usuarios, senha, aparelhos) ----------
+rota('GET', '/api/acesso', (req) => acesso.resumo(req.quem));
+rota('POST', '/api/acesso/minha-senha', async (req) => { acesso.trocarMinhaSenha(req.quem, await corpoJson(req)); return { ok: true }; });
+rota('POST', '/api/acesso/usuarios', async (req) => { acesso.exigirAdmin(req.quem); return acesso.publico(acesso.criarUsuario(await corpoJson(req))); });
+rota('PATCH', '/api/acesso/usuarios/:id', async (req, p) => acesso.atualizarUsuario(req.quem, p.id, await corpoJson(req)));
+rota('DELETE', '/api/acesso/usuarios/:id', (req, p) => { acesso.removerUsuario(req.quem, p.id); return { ok: true }; });
+rota('DELETE', '/api/acesso/sessoes/:id', (req, p) => { acesso.encerrarSessao(req.quem, p.id); return { ok: true }; });
+rota('POST', '/api/acesso/sair-dos-outros', (req) => { acesso.sairDosOutros(req.quem); return { ok: true }; });
+
 rota('GET', '/api/postagens', () => postagens.listar());
 rota('POST', '/api/postagens', async (req) => postagens.criar(await corpoJson(req)));
 rota('POST', '/api/postagens/:id/repetir/:plat', (req, p) => postagens.repetir(p.id, p.plat));
@@ -255,26 +265,38 @@ const servidor = http.createServer(async (req, res) => {
   // Bloqueia sites de fora tentando falar com o painel (DNS rebinding / CSRF).
   if (!ambiente.NUVEM && !HOSTS.has(req.headers.host)) { res.writeHead(403); return res.end('Host nao permitido'); }
   const u = new URL(req.url, 'http://' + req.headers.host);
-  // login (so quando tem senha; na nuvem sempre)
-  if (acesso.ativo()) {
-    if (u.pathname === '/login' && req.method === 'POST') {
-      let corpo = '';
-      for await (const d of req) { corpo += d; if (corpo.length > 4000) break; }
-      const r = acesso.conferir(req, new URLSearchParams(corpo).get('senha') || '');
-      if (!r.ok) { res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(acesso.pagina(r.erro)); }
-      res.writeHead(303, { 'Set-Cookie': acesso.cookieEntrada(), Location: '/' });
-      return res.end();
+  // ---------- login (PC e nuvem) ----------
+  const html = (status, corpo, extra = {}) => { res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', ...extra }); res.end(corpo); };
+  const lerForm = async () => {
+    let corpo = '';
+    for await (const d of req) { corpo += d; if (corpo.length > 8000) break; }
+    return Object.fromEntries(new URLSearchParams(corpo));
+  };
+  if (u.pathname === '/login' || u.pathname === '/primeiro-acesso') {
+    const primeiro = acesso.precisaPrimeiroAcesso();
+    if (req.method === 'GET') return html(200, acesso.pagina({ primeiro }));
+    if (req.method !== 'POST') return html(405, '');
+    const f = await lerForm();
+    if (primeiro) {
+      try { const r = acesso.criarPrimeiro(req, f); return html(303, '', { 'Set-Cookie': r.cookie, Location: '/' }); } catch (e) { return html(400, acesso.pagina({ primeiro, erro: e.message })); }
     }
-    if (u.pathname === '/login') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(acesso.pagina()); }
-    if (u.pathname === '/sair') { res.writeHead(303, { 'Set-Cookie': acesso.cookieSaida(), Location: '/login' }); return res.end(); }
-    if (!acesso.logado(req)) {
-      if (u.pathname.startsWith('/api/')) return json(res, 401, { erro: 'Sessao expirada. Entre de novo.' });
-      res.writeHead(303, { Location: '/login' });
-      return res.end();
-    }
+    const r = acesso.entrar(req, f.usuario, f.senha);
+    if (r.erro) return html(401, acesso.pagina({ erro: r.erro }));
+    return html(303, '', { 'Set-Cookie': r.cookie, Location: '/' });
   }
-  if (u.pathname.startsWith('/api/') && req.method !== 'GET' && req.headers['x-postador'] !== '1') {
-    return json(res, 403, { erro: 'Pedido sem o cabecalho do painel.' });
+  if (u.pathname === '/sair') { acesso.sair(req); return html(303, '', { 'Set-Cookie': acesso.cookieSaida(), Location: '/login' }); }
+  const quem = acesso.sessaoDe(req);
+  if (!quem) {
+    if (u.pathname.startsWith('/api/')) return json(res, 401, { erro: 'Entre de novo (sessao expirada).' });
+    res.writeHead(303, { Location: '/login' });
+    return res.end();
+  }
+  req.quem = quem;
+  // contas das redes (chaves e tokens) so o administrador mexe
+  const mexeEmConta = (u.pathname.startsWith('/api/contas') && req.method !== 'GET') || u.pathname.startsWith('/oauth/');
+  if (mexeEmConta && quem.usuario.papel !== 'admin') {
+    if (u.pathname.startsWith('/oauth/')) return html(403, acesso.pagina({ erro: 'So o administrador conecta as redes.' }));
+    return json(res, 403, { erro: 'So o administrador mexe nas contas das redes.' });
   }
   for (const r of rotas) {
     if (r.metodo !== req.method) continue;
@@ -305,8 +327,8 @@ servidor.on('error', (e) => {
 process.on('uncaughtException', (e) => console.error('Erro inesperado:', esconder(e.stack || e.message)));
 process.on('unhandledRejection', (e) => console.error('Erro inesperado:', esconder((e && e.stack) || e)));
 
-if (ambiente.NUVEM && !acesso.ativo()) {
-  console.error('Na nuvem o painel precisa de senha: crie a variavel SENHA_PAINEL no Railway.');
+if (!acesso.podeSubir()) {
+  console.error('Na nuvem o primeiro acesso precisa de um codigo: crie a variavel SENHA_PAINEL no Railway.');
   process.exit(1);
 }
 cofre.carregar();

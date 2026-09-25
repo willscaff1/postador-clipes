@@ -45,6 +45,7 @@ const PAGINAS = {
   historico: ['Histórico', 'Tudo que foi enviado, rede por rede.'],
   lives: ['Lives', 'Suas lives da Twitch e da Kick: assista, marque o lance e vire clipe.'],
   estudio: ['Estúdio', 'Vídeos longos automáticos pro YouTube e clipes, direto das suas lives.'],
+  acesso: ['Acesso', 'Quem entra no painel: sua senha, aparelhos conectados e usuários.'],
   metricas: ['Métricas', 'Seguidores, views e o desempenho de cada post, por rede ou somando tudo.'],
   contas: ['Contas', 'Conecte e teste cada rede.'],
 };
@@ -95,7 +96,14 @@ async function carregarEstado() {
   const e = await api('GET', '/api/estado');
   estado.plataformas = e.plataformas;
   estado.ferramentas = e.ferramentas;
-  $('#sairPainel').hidden = !e.login;
+  estado.eu = e.eu;
+  if (e.eu) {
+    $('#usuarioLateral').hidden = false;
+    $('#nomeUsuario').textContent = e.eu.nome;
+    $('#papelUsuario').textContent = e.eu.papel === 'admin' ? 'Administrador' : 'Editor';
+    $('#avatarUsuario').textContent = e.eu.nome.trim().charAt(0).toUpperCase();
+    document.body.classList.toggle('editor', e.eu.papel !== 'admin');
+  }
   const faltas = [];
   if (!e.ferramentas.ffmpeg) faltas.push('ffmpeg não encontrado — sem ele não dá pra converter nem preparar clipes. Instale com <code>winget install Gyan.FFmpeg</code> e reinicie.');
   $('#avisoFerramentas').innerHTML = faltas.join('<br>');

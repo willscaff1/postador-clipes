@@ -588,3 +588,31 @@ kbd { font: 600 11px ui-monospace, Consolas, monospace; background: var(--cartao
 .sair-lateral { margin-top: auto; color: var(--lateral-texto); text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 9px; }
 .sair-lateral:hover { background: var(--lateral2); color: #fff; }
 .sair-lateral:not([hidden]) + .canal-lateral { margin-top: 0; }
+
+/* usuario logado na barra lateral */
+.usuario-lateral { margin-top: auto; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: var(--lateral2); border: 1px solid rgba(255,255,255,.05); }
+.usuario-lateral + .canal-lateral { margin-top: 0; }
+.avatar { width: 34px; height: 34px; border-radius: 10px; background: var(--gradiente); color: #fff; font-weight: 800; display: grid; place-items: center; }
+.usuario-lateral b { display: block; color: #fff; font-size: 13.5px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usuario-lateral small { color: var(--lateral-texto); font-size: 11.5px; }
+.usuario-lateral .sair-lateral { margin: 0; font-size: 16px; padding: 6px 8px; }
+/* editor nao mexe nas contas das redes */
+body.editor .conta .botoes, body.editor .conta form, body.editor .conta details { display: none; }
+body.editor #aba-contas::before { content: "Só o administrador conecta ou muda as contas das redes."; display: block; margin-bottom: 14px; padding: 10px 14px; border-radius: 12px; background: var(--alerta-fundo); color: var(--alerta); font-size: 14px; }
+/* página Acesso */
+.acesso-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: start; }
+.acesso-grade .bloco-met h2 { margin-bottom: 12px; }
+.form-acesso { display: grid; gap: 10px; }
+.form-acesso .campo { margin: 0; }
+.linha-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.item-acesso { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--borda); }
+.item-acesso:last-child { border-bottom: 0; }
+.item-acesso b { display: block; font-size: 14px; }
+.item-acesso small { color: var(--suave); font-size: 12.5px; }
+.item-acesso .acoes-item { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.icone-aparelho { width: 36px; height: 36px; border-radius: 10px; background: var(--cartao2); display: grid; place-items: center; font-size: 18px; }
+.tag-atual { font-size: 11px; font-weight: 700; color: var(--ok); background: var(--ok-fundo); padding: 1px 7px; border-radius: 99px; margin-left: 6px; }
+.tag-papel { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--info-fundo); color: var(--destaque); margin-left: 6px; }
+.forca-senha { height: 5px; border-radius: 99px; background: var(--borda); overflow: hidden; }
+.forca-senha i { display: block; height: 100%; width: 0; transition: width .2s, background .2s; }
+.form-acesso h3 { margin: 10px 0 0; font-size: 15px; }
