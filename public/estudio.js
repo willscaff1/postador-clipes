@@ -9,8 +9,54 @@ const TIPOS_EST = {
 };
 const ALVO_MIN = 20 * 60; const ALVO_MAX = 30 * 60;
 
+// ---------- automatico ----------
+async function carregarAutomatico() {
+  let a;
+  try { a = await api('GET', '/api/estudio/automatico'); } catch (e) { return; }
+  est.auto = a;
+  const atual = a.atual ? `<div class="auto-atual"><i class="giro"></i><b>${esc(a.atual.etapa)}:</b> ${esc(a.atual.titulo)}</div>` : '';
+  $('#painelAutomatico').innerHTML = `
+    <div class="auto-topo">
+      <div><h2>🤖 Automático</h2><p class="dica">Quando uma live termina, o painel analisa sozinho${a.montarNovas ? ', monta o vídeo de 20–30 min e as thumbs,' : ''} e deixa pronto pra você postar.</p></div>
+      <label class="chave"><input type="checkbox" id="autoLigado" ${a.ligado ? 'checked' : ''}><span></span>${a.ligado ? 'Ligado' : 'Desligado'}</label>
+    </div>
+    <div class="auto-opcoes">
+      <label class="check"><input type="checkbox" id="autoMontar" ${a.montarNovas ? 'checked' : ''}> Montar o vídeo sozinho nas lives novas</label>
+      <button class="sec mini" id="autoVerificar">🔎 Procurar live nova agora</button>
+      <button class="sec mini" id="autoAntigas">📚 Analisar todas as lives antigas</button>
+      ${a.fila.length ? `<button class="sec mini perigo" id="autoLimpar">Esvaziar fila (${a.fila.length})</button>` : ''}
+    </div>
+    ${atual}
+    ${a.fila.length ? `<p class="dica">Na fila: ${a.fila.length} live(s)${a.fila.length > 1 ? ' — cada análise leva uns 10–15 min' : ''}. ${a.ultimaVerificacao ? 'Última procura: ' + quando(a.ultimaVerificacao) : ''}</p>` : (a.ultimaVerificacao ? `<p class="dica">Última procura: ${quando(a.ultimaVerificacao)}. Procura de novo a cada 15 min.</p>` : '')}
+    ${a.historico.length ? `<details class="auto-hist"><summary>O que ele já fez</summary><ul>${a.historico.map((h) => `<li><span class="dica">${quando(h.em)}</span> ${esc(h.texto)}</li>`).join('')}</ul></details>` : ''}`;
+  if (a.atual || a.fila.length) setTimeout(() => { if (!$('#aba-estudio').hidden && !est.job) { carregarAutomatico(); carregarEstudio(true); } }, 8000);
+}
+$('#painelAutomatico').addEventListener('change', async (e) => {
+  try {
+    if (e.target.id === 'autoLigado') await api('POST', '/api/estudio/automatico', { ligado: e.target.checked });
+    if (e.target.id === 'autoMontar') await api('POST', '/api/estudio/automatico', { montarNovas: e.target.checked });
+  } catch (err) { toast(err.message, true); }
+  carregarAutomatico();
+});
+$('#painelAutomatico').addEventListener('click', async (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  b.disabled = true;
+  try {
+    if (b.id === 'autoVerificar') { await api('POST', '/api/estudio/automatico/verificar'); toast('Procurei. Se tinha live nova, já entrou na fila.'); }
+    if (b.id === 'autoAntigas') {
+      if (!confirm('Analisar todas as lives antigas que ainda não foram analisadas? Roda em segundo plano, uma por vez (uns 10–15 min cada). Não monta vídeo, só analisa.')) { b.disabled = false; return; }
+      const r = await api('POST', '/api/estudio/automatico/antigas');
+      toast(r.enfileiradas + ' live(s) na fila.');
+    }
+    if (b.id === 'autoLimpar') await api('DELETE', '/api/estudio/automatico/fila');
+  } catch (err) { toast(err.message, true); }
+  carregarAutomatico();
+});
+
 // ---------- lista ----------
-async function carregarEstudio() {
+async function carregarEstudio(soLista) {
+  if (!soLista) carregarAutomatico();
   try { est.jobs = await api('GET', '/api/estudio'); } catch (e) { est.jobs = []; }
   desenharJobs();
   carregarLivesEstudio();
@@ -215,6 +261,7 @@ function desenharMomentos() {
       <select data-tipo="${m.id}" class="tipo-select">${Object.entries(TIPOS_EST).map(([k, x]) => `<option value="${k}" ${k === m.tipo ? 'selected' : ''}>${x[0]} ${x[1]}</option>`).join('')}</select>
       <span class="momento-tempo">${hms(m.inicio)} → ${hms(m.fim)} <small>${tempo(m.fim - m.inicio)}</small></span>
       <span class="nota" title="Força do momento"><i style="width:${m.nota}%"></i></span>
+      <span class="avaliar"><button class="sec mini ${m.avaliacao === 'bom' ? 'ativa-bom' : ''}" data-avaliar="bom" data-mid="${m.id}" title="Esse momento é bom">👍</button><button class="sec mini ${m.avaliacao === 'ruim' ? 'ativa-ruim' : ''}" data-avaliar="ruim" data-mid="${m.id}" title="Nada a ver (tira do vídeo)">👎</button></span>
       <button class="sec mini" data-ver="${m.id}" title="Assistir">▶</button>
       <button class="sec mini" data-ajustar="${m.id}" title="Abrir no editor pra ajustar">✎</button>
       ${clip ? (clip.estado === 'pronto' ? `<button class="mini" data-postar-clipe="${clip.id}">Postar clipe</button>` : `<span class="dica">${clip.estado === 'erro' ? '✗' : '<i class="giro"></i>' + (clip.progresso || 0) + '%'}</span>`)
@@ -264,6 +311,12 @@ $('#estudioJob').addEventListener('click', async (e) => {
   if (alvo.closest('#voltarEstudio')) return fecharJob();
   const bloco = alvo.closest('[data-momento]');
   if (bloco) { const m = j.momentos.find((x) => x.id === bloco.dataset.momento); if (m) verMomento(m); return; }
+  const av = alvo.closest('[data-avaliar]');
+  if (av) {
+    const m = j.momentos.find((x) => x.id === av.dataset.mid);
+    const nova = m.avaliacao === av.dataset.avaliar ? null : av.dataset.avaliar;
+    return salvarMomentos([{ id: m.id, avaliacao: nova }]).catch((err) => toast(err.message, true));
+  }
   const ver = alvo.closest('[data-ver]');
   if (ver) return verMomento(j.momentos.find((x) => x.id === ver.dataset.ver));
   const aj = alvo.closest('[data-ajustar]');

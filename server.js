@@ -239,6 +239,12 @@ rota('GET', '/api/kick/clipes', () => plataformas.obter('kick').listarClipes(cof
 rota('GET', '/api/hls', (req, p, u, res) => lives.proxy(req, res, u.searchParams.get('u')));
 
 const estudio = require('./lib/estudio');
+const automacao = require('./lib/automacao');
+rota('GET', '/api/estudio/automatico', () => automacao.resumo());
+rota('POST', '/api/estudio/automatico', async (req) => automacao.configurar(await corpoJson(req)));
+rota('POST', '/api/estudio/automatico/antigas', () => automacao.analisarAntigas());
+rota('POST', '/api/estudio/automatico/verificar', async () => { await automacao.verificar(); return automacao.resumo(); });
+rota('DELETE', '/api/estudio/automatico/fila', () => automacao.limparFila());
 rota('GET', '/api/estudio', () => estudio.listar());
 rota('POST', '/api/estudio', async (req) => estudio.analisar(await corpoJson(req)));
 rota('GET', '/api/estudio/:id', (req, p) => estudio.obter(p.id));
@@ -352,6 +358,7 @@ if (!acesso.podeSubir()) {
 }
 cofre.carregar();
 clipes.limparTemporarios();
+automacao.iniciar();
 servidor.listen(PORTA, ambiente.NUVEM ? '0.0.0.0' : '127.0.0.1', () => {
   const f = midia.ferramentas();
   console.log('Postador de clipes: ' + ambiente.urlBase() + (ambiente.NUVEM ? ' (nuvem, porta ' + PORTA + ', dados em ' + ambiente.DADOS + ')' : ''));
