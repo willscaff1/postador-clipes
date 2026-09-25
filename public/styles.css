@@ -616,3 +616,8 @@ body.editor #aba-contas::before { content: "Só o administrador conecta ou muda 
 .forca-senha { height: 5px; border-radius: 99px; background: var(--borda); overflow: hidden; }
 .forca-senha i { display: block; height: 100%; width: 0; transition: width .2s, background .2s; }
 .form-acesso h3 { margin: 10px 0 0; font-size: 15px; }
+
+.pacote-contas summary { cursor: pointer; }
+.pacote-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 12px; }
+.pacote-grade .dica { margin: 0; }
+body.editor .pacote-contas { display: none; }

@@ -259,6 +259,25 @@
     <!-- CONTAS -->
     <section id="aba-contas" class="aba" hidden>
       <p class="dica bloco">As credenciais ficam só neste PC, criptografadas e presas ao seu usuário do Windows. O painel nunca mostra um segredo salvo de volta; campo em branco mantém o que já estava salvo.</p>
+      <details class="painel pacote-contas">
+        <summary><b>📦 Levar as contas pra outro painel</b> <span class="dica">(ex.: do PC pro Railway, sem conectar rede por rede)</span></summary>
+        <div class="pacote-grade">
+          <form id="formExportar" class="form-acesso">
+            <h3>1. Exportar daqui</h3>
+            <p class="dica">Gera um arquivo com todas as contas conectadas e suas preferências, trancado com uma senha que você escolhe agora.</p>
+            <label class="campo">Senha do arquivo<input type="password" name="senha" minlength="8" required autocomplete="new-password"></label>
+            <label class="campo">Repita<input type="password" name="repete" minlength="8" required autocomplete="new-password"></label>
+            <button>⬇ Baixar arquivo das contas</button>
+          </form>
+          <form id="formImportar" class="form-acesso">
+            <h3>2. Importar no outro painel</h3>
+            <p class="dica">Escolha o arquivo exportado e digite a mesma senha. As contas entram e são testadas na hora.</p>
+            <label class="campo">Arquivo<input type="file" name="arquivo" accept=".json,application/json" required></label>
+            <label class="campo">Senha do arquivo<input type="password" name="senha" required autocomplete="off"></label>
+            <button>⬆ Importar contas</button>
+          </form>
+        </div>
+      </details>
       <div id="contas" class="contas"></div>
     </section>
 

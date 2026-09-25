@@ -246,6 +246,20 @@ rota('POST', '/api/estudio/:id/clipes', async (req, p) => (await estudio.virarCl
 rota('DELETE', '/api/estudio/:id', (req, p) => { estudio.apagar(p.id); return { ok: true }; });
 rota('GET', '/midia/estudio/:id/:arquivo', (req, p, u, res) => { servirArquivo(req, res, estudio.arquivo(p.id, p.arquivo)); });
 
+// ---------- pacote de contas (levar do PC pro Railway) ----------
+const pacote = require('./lib/pacote');
+rota('POST', '/api/contas-pacote/exportar', async (req, p, u, res) => {
+  const texto = pacote.exportar((await corpoJson(req)).senha);
+  res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Disposition': 'attachment; filename="postador-contas.json"', 'Cache-Control': 'no-store' });
+  res.end(texto);
+});
+rota('POST', '/api/contas-pacote/importar', async (req) => {
+  const b = await corpoJson(req);
+  const r = pacote.importar(b.arquivo, b.senha);
+  for (const plat of r.redes) if (plataformas.obter(plat)) await testarConta(plat);
+  return r;
+});
+
 // ---------- acesso (usuarios, senha, aparelhos) ----------
 rota('GET', '/api/acesso', (req) => acesso.resumo(req.quem));
 rota('POST', '/api/acesso/minha-senha', async (req) => { acesso.trocarMinhaSenha(req.quem, await corpoJson(req)); return { ok: true }; });
@@ -292,6 +306,16 @@ const servidor = http.createServer(async (req, res) => {
     return res.end();
   }
   req.quem = quem;
+  // senha provisoria: so libera o resto depois de trocar
+  if (quem.usuario.trocarSenha) {
+    if (u.pathname === '/trocar-senha' && req.method === 'POST') {
+      const f = await lerForm();
+      try { acesso.concluirTrocaObrigatoria(quem, f); return html(303, '', { Location: '/' }); } catch (e) { return html(400, acesso.pagina({ troca: true, quem, erro: e.message })); }
+    }
+    if (u.pathname.startsWith('/api/')) return json(res, 403, { erro: 'Troque a senha provisoria primeiro.', trocarSenha: true });
+    if (u.pathname === '/' || u.pathname === '/index.html' || u.pathname === '/trocar-senha') return html(200, acesso.pagina({ troca: true, quem }));
+    if (!/\.(css|js|png|svg|ico)$/.test(u.pathname)) { res.writeHead(303, { Location: '/trocar-senha' }); return res.end(); }
+  }
   // contas das redes (chaves e tokens) so o administrador mexe
   const mexeEmConta = (u.pathname.startsWith('/api/contas') && req.method !== 'GET') || u.pathname.startsWith('/oauth/');
   if (mexeEmConta && quem.usuario.papel !== 'admin') {
@@ -327,6 +351,7 @@ servidor.on('error', (e) => {
 process.on('uncaughtException', (e) => console.error('Erro inesperado:', esconder(e.stack || e.message)));
 process.on('unhandledRejection', (e) => console.error('Erro inesperado:', esconder((e && e.stack) || e)));
 
+acesso.garantirAdmin();
 if (!acesso.podeSubir()) {
   console.error('Na nuvem o primeiro acesso precisa de um codigo: crie a variavel SENHA_PAINEL no Railway.');
   process.exit(1);

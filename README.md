@@ -6,7 +6,9 @@ TikTok e X, com métricas de tudo.
 
 ## Login
 
-No primeiro acesso a tela pede pra criar o administrador (na nuvem, com o codigo `SENHA_PAINEL`).
+Na primeira vez o painel cria o admin: usuario `admin`, senha `admin` no PC (na nuvem, a senha e o codigo `SENHA_PAINEL`). O primeiro login obriga a trocar a senha (e da pra trocar o usuario).
+
+Pra levar as contas das redes do PC pro Railway: aba **Contas → Levar as contas pra outro painel** (exporta um arquivo trancado com senha e importa no outro).
 Depois, na aba **Acesso**: trocar senha, ver e desconectar aparelhos, criar usuarios (admin ou editor).
 Editor corta, posta e ve metricas, mas nao mexe nas contas das redes nem em usuarios.
 
@@ -29,8 +31,8 @@ No PC também tem login, e o painel só aceita conexão do próprio computador.
    - `BASE_URL` = o endereço público do serviço, ex.: `https://postador-production.up.railway.app`
      (se não colocar, usa o domínio do Railway automaticamente)
 4. **Domínio:** *Settings → Networking → Generate Domain*.
-5. Entre no endereço, crie o administrador (usuário + senha + o código) e conecte as redes de novo na aba **Contas**
-   (as contas do PC não vão junto, por segurança).
+5. Entre com `admin` e o código `SENHA_PAINEL`, crie sua senha e importe as contas do PC na aba **Contas**
+   (ou conecte rede por rede).
 
 ### Endereços de retorno (login das redes)
 

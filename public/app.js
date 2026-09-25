@@ -1222,3 +1222,32 @@ window.addEventListener('hashchange', () => {
   const aba = location.hash.replace('#', '');
   if (Object.keys(PAGINAS).includes(aba)) irPara(aba);
 });
+
+// ---------- pacote de contas (levar do PC pro Railway) ----------
+$('#formExportar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  if (f.senha !== f.repete) return toast('As duas senhas não batem.', true);
+  const r = await fetch('/api/contas-pacote/exportar', { method: 'POST', headers: { 'X-Postador': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: f.senha }) });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); return toast(j.erro || 'Não deu pra exportar.', true); }
+  const url = URL.createObjectURL(await r.blob());
+  const a = document.createElement('a');
+  a.href = url; a.download = 'postador-contas.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  e.target.reset();
+  toast('Arquivo baixado. Guarde a senha: sem ela o arquivo não abre.');
+});
+$('#formImportar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const arq = e.target.arquivo.files[0];
+  if (!arq) return;
+  const b = $('button', e.target);
+  b.disabled = true; b.textContent = 'Importando e testando…';
+  try {
+    const r = await api('POST', '/api/contas-pacote/importar', { arquivo: await arq.text(), senha: e.target.senha.value });
+    e.target.reset();
+    toast(r.redes.length + ' conta(s) importada(s): ' + r.redes.map((p) => NOMES_PLAT[p] || p).join(', '));
+    await carregarEstado();
+  } catch (err) { toast(err.message, true); }
+  b.disabled = false; b.textContent = '⬆ Importar contas';
+});
