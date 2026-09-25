@@ -17,7 +17,7 @@ node server.js
 ```
 
 Abre em http://localhost:8790. Precisa do Node 20+ e do ffmpeg (`winget install Gyan.FFmpeg`).
-No PC não tem senha: o painel só aceita conexão do próprio computador.
+No PC também tem login, e o painel só aceita conexão do próprio computador.
 
 ## Rodar no Railway
 
