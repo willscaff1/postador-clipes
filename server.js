@@ -365,6 +365,7 @@ clipes.limparTemporarios();
 servidor.listen(PORTA, ambiente.NUVEM ? '0.0.0.0' : '127.0.0.1', () => {
   const f = midia.ferramentas();
   console.log('Postador de clipes: ' + ambiente.urlBase() + (ambiente.NUVEM ? ' (nuvem, porta ' + PORTA + ', dados em ' + ambiente.DADOS + ')' : ''));
+  if (ambiente.NUVEM && !process.env.SENHA_PAINEL) console.log('CODIGO DE INSTALACAO (use no "Enviar pro painel online" do PC, ou como senha do admin no primeiro acesso): ' + ambiente.SENHA);
   if (!f.ffmpeg) console.log('ATENCAO: ffmpeg nao encontrado. Instale com: winget install Gyan.FFmpeg');
   if (!f.ytdlp) console.log('Opcional: yt-dlp nao encontrado (so faz falta pra links fora da Twitch): winget install yt-dlp.yt-dlp');
 });
