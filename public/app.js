@@ -1257,11 +1257,20 @@ $('#formEnviarOnline').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = Object.fromEntries(new FormData(e.target));
   const b = $('button', e.target);
-  b.disabled = true; b.textContent = 'Enviando…';
+  b.disabled = true;
   try {
-    const r = await api('POST', '/api/contas-pacote/enviar-online', f);
+    await api('POST', '/api/contas-pacote/enviar-online', f);
     e.target.codigo.value = '';
-    toast('Pronto! Foram ' + r.usuarios.length + ' usuário(s) e ' + r.redes.length + ' conta(s). Entre no painel online com o mesmo usuário e senha.');
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const s = await api('GET', '/api/contas-pacote/enviar-online');
+      if (s.estado === 'enviando') { b.textContent = (s.etapa || 'enviando') + ' — ' + (s.progresso || 0) + '%'; continue; }
+      if (s.estado === 'erro') throw new Error(s.erro);
+      const r = s.resultado;
+      toast('Pronto! Foram ' + r.redes.length + ' contas, ' + r.postagens + ' postagens do histórico e ' + r.clipes + ' clipes (' + r.megas + ' MB).' +
+        (r.usuarios ? ' Entre lá com o mesmo usuário e senha.' : ' Entre lá com admin e o código de instalação.'));
+      break;
+    }
   } catch (err) { toast(err.message, true); }
   b.disabled = false; b.textContent = '🚀 Enviar pro painel online';
 });

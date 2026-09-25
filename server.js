@@ -249,7 +249,19 @@ rota('GET', '/midia/estudio/:id/:arquivo', (req, p, u, res) => { servirArquivo(r
 // ---------- pacote de contas (levar do PC pro Railway) ----------
 const pacote = require('./lib/pacote');
 const migracao = require('./lib/migracao');
-rota('POST', '/api/contas-pacote/enviar-online', async (req) => { acesso.exigirAdmin(req.quem); const b = await corpoJson(req); return migracao.enviar(b.destino, b.codigo); });
+// transferencia roda em segundo plano; a tela acompanha pelo GET
+let envioOnline = null;
+rota('POST', '/api/contas-pacote/enviar-online', async (req) => {
+  acesso.exigirAdmin(req.quem);
+  if (envioOnline && envioOnline.estado === 'enviando') throw new Error('Ja tem uma transferencia em andamento.');
+  const b = await corpoJson(req);
+  envioOnline = { estado: 'enviando', etapa: 'conferindo o codigo', progresso: 0 };
+  migracao.enviar(b.destino, b.codigo, (etapa, progresso) => Object.assign(envioOnline, { etapa, progresso }))
+    .then((r) => Object.assign(envioOnline, { estado: 'ok', resultado: r, etapa: null }))
+    .catch((e) => Object.assign(envioOnline, { estado: 'erro', erro: esconder(e.message), etapa: null }));
+  return envioOnline;
+});
+rota('GET', '/api/contas-pacote/enviar-online', (req) => { acesso.exigirAdmin(req.quem); return envioOnline || { estado: 'parado' }; });
 rota('POST', '/api/contas-pacote/exportar', async (req, p, u, res) => {
   const texto = pacote.exportar((await corpoJson(req)).senha);
   res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Disposition': 'attachment; filename="postador-contas.json"', 'Cache-Control': 'no-store' });
@@ -290,6 +302,8 @@ const servidor = http.createServer(async (req, res) => {
   };
   // painel online recebendo a transferencia do PC (autentica pelo codigo SENHA_PAINEL)
   if (u.pathname === '/api/migrar/receber' && req.method === 'POST') return migracao.receber(req, res, json);
+  if (u.pathname === '/api/migrar/conferir' && req.method === 'POST') return migracao.conferir(req, res, json);
+  if (u.pathname === '/api/migrar/arquivo' && req.method === 'PUT') return migracao.receberArquivo(req, res, json, u);
   if (u.pathname === '/login' || u.pathname === '/primeiro-acesso') {
     const primeiro = acesso.precisaPrimeiroAcesso();
     if (req.method === 'GET') return html(200, acesso.pagina({ primeiro }));
