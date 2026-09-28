@@ -22,6 +22,7 @@ async function carregarAutomatico() {
     </div>
     <div class="auto-opcoes">
       <label class="check"><input type="checkbox" id="autoMontar" ${a.montarNovas ? 'checked' : ''}> Montar o vídeo sozinho nas lives novas</label>
+      <button class="mini" id="autoCompilado">🚔 Montar compilado de fugas</button>
       <button class="sec mini" id="autoVerificar">🔎 Procurar live nova agora</button>
       <button class="sec mini" id="autoAntigas">📚 Analisar todas as lives antigas</button>
       ${a.fila.length ? `<button class="sec mini perigo" id="autoLimpar">Esvaziar fila (${a.fila.length})</button>` : ''}
@@ -50,6 +51,12 @@ $('#painelAutomatico').addEventListener('click', async (e) => {
       toast(r.enfileiradas + ' live(s) na fila.');
     }
     if (b.id === 'autoLimpar') await api('DELETE', '/api/estudio/automatico/fila');
+    if (b.id === 'autoCompilado') {
+      b.textContent = 'Juntando as fugas e desenhando as thumbs…';
+      const j = await api('POST', '/api/estudio/compilado', { tipo: 'fuga', maxMin: 25 });
+      toast('Compilado pronto pra conferir: ' + j.momentos.length + ' fugas. Confira e clique em Montar vídeo.');
+      return abrirJob(j.id);
+    }
   } catch (err) { toast(err.message, true); }
   carregarAutomatico();
 });
@@ -259,7 +266,7 @@ function desenharMomentos() {
     return `<div class="momento ${m.selecionado ? 'sel' : ''}" data-id="${m.id}" style="--cor:${t[2]}">
       <input type="checkbox" data-sel="${m.id}" ${m.selecionado ? 'checked' : ''} title="Entra no vídeo longo">
       <select data-tipo="${m.id}" class="tipo-select">${Object.entries(TIPOS_EST).map(([k, x]) => `<option value="${k}" ${k === m.tipo ? 'selected' : ''}>${x[0]} ${x[1]}</option>`).join('')}</select>
-      <span class="momento-tempo">${hms(m.inicio)} → ${hms(m.fim)} <small>${tempo(m.fim - m.inicio)}</small></span>
+      <span class="momento-tempo">${hms(m.inicio)} → ${hms(m.fim)} <small>${tempo(m.fim - m.inicio)}${m.liveEm ? ' · live de ' + new Date(m.liveEm).toLocaleDateString('pt-BR') : ''}</small></span>
       <span class="nota" title="Força do momento"><i style="width:${m.nota}%"></i></span>
       <span class="avaliar"><button class="sec mini ${m.avaliacao === 'bom' ? 'ativa-bom' : ''}" data-avaliar="bom" data-mid="${m.id}" title="Esse momento é bom">👍</button><button class="sec mini ${m.avaliacao === 'ruim' ? 'ativa-ruim' : ''}" data-avaliar="ruim" data-mid="${m.id}" title="Nada a ver (tira do vídeo)">👎</button></span>
       <button class="sec mini" data-ver="${m.id}" title="Assistir">▶</button>
@@ -284,17 +291,20 @@ async function salvarMomentos(mudancas) {
 }
 
 // ---------- player ----------
-async function iniciarPreviewEstudio() {
+async function iniciarPreviewEstudio(plat, liveId) {
   const v = $('#videoEstudio');
   if (!v || !est.job) return;
+  plat = plat || est.job.plat; liveId = liveId || est.job.liveId;
+  est.previewDe = plat + ':' + liveId;
   try {
-    const { url } = await api('GET', '/api/lives/' + est.job.plat + '/' + est.job.liveId + '/preview');
+    const { url } = await api('GET', '/api/lives/' + plat + '/' + liveId + '/preview');
     if (est.hls) est.hls.destroy();
     if (window.Hls && Hls.isSupported()) { est.hls = new Hls({ maxBufferLength: 15 }); est.hls.loadSource(url); est.hls.attachMedia(v); } else v.src = url;
     v.addEventListener('timeupdate', () => { if (est.tocarAte && v.currentTime >= est.tocarAte) { v.pause(); est.tocarAte = null; } });
   } catch (e) { $('#legendaPlayer').textContent = e.message; }
 }
-function verMomento(m) {
+async function verMomento(m) {
+  if (m.liveId && est.previewDe !== m.plat + ':' + m.liveId) { await iniciarPreviewEstudio(m.plat, m.liveId); await new Promise((r) => setTimeout(r, 1500)); }
   const v = $('#videoEstudio');
   v.currentTime = m.inicio;
   est.tocarAte = m.fim;
@@ -351,11 +361,12 @@ $('#estudioJob').addEventListener('click', async (e) => {
     const textos = (j.thumbs || []).map((t, i) => [$(`[data-thumb-l1="${i}"]`).value.trim(), $(`[data-thumb-l2="${i}"]`).value.trim()]);
     const v = $('#videoEstudio');
     const tempo = b.id === 'thumbDoPlayer' ? v.currentTime : undefined;
+    const [platQ, liveQ] = String(est.previewDe || '').split(':');
     if (b.id === 'thumbDoPlayer' && !(tempo > 0)) return toast('Dê play no momento, pause no quadro que você quer e clique de novo.', true);
     await api('POST', '/api/preferencias', { estudioEtiqueta: $('#estudioEtiqueta').value.trim(), estudioFinalTitulo: $('#estudioFinal').value.trim() }).catch(() => {});
     b.disabled = true;
     b.textContent = 'Desenhando…';
-    try { est.job = await api('POST', '/api/estudio/' + j.id + '/thumbs', { textos, tempo }); desenharJob(); iniciarPreviewEstudio(); } catch (err) { toast(err.message, true); b.disabled = false; }
+    try { est.job = await api('POST', '/api/estudio/' + j.id + '/thumbs', { textos, tempo, plat: tempo != null ? platQ : undefined, liveId: tempo != null ? liveQ : undefined }); desenharJob(); iniciarPreviewEstudio(); } catch (err) { toast(err.message, true); b.disabled = false; }
     return;
   }
   if (alvo.closest('#montarVideo') || alvo.closest('#remontar')) {

@@ -240,6 +240,7 @@ rota('GET', '/api/hls', (req, p, u, res) => lives.proxy(req, res, u.searchParams
 
 const estudio = require('./lib/estudio');
 const automacao = require('./lib/automacao');
+rota('POST', '/api/estudio/compilado', async (req) => { const b = await corpoJson(req); const j = estudio.compilar({ tipo: b.tipo || 'fuga', maxMin: Number(b.maxMin) || 25 }); await estudio.gerarThumbs(j); estudio.salvarJob(j); return j; });
 rota('GET', '/api/estudio/automatico', () => automacao.resumo());
 rota('POST', '/api/estudio/automatico', async (req) => automacao.configurar(await corpoJson(req)));
 rota('POST', '/api/estudio/automatico/antigas', () => automacao.analisarAntigas());
