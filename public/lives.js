@@ -165,6 +165,8 @@ async function abrirLive(plat, live) {
   lives.seq = [];
   lives.sel = null;
   lives.thumbInicio = null;
+  lives.cortandoDesde = null;
+  mostrarEstadoCorte();
   $('#liveTitulo').textContent = live.titulo || 'Live';
   $('#liveInfo').textContent = `${NOMES_PLAT[plat]} · ${quando(live.criadoEm)} · ${hms(live.duracao)} · 👁 ${numero(live.views)}`;
   $('#corteInicio').value = '';
@@ -234,7 +236,7 @@ function atualizarTrecho() {
   } else if (!Number.isNaN(ini) && !Number.isNaN(fim) && fim <= ini) {
     d.textContent = 'O fim precisa ser depois do início.';
   } else {
-    d.textContent = 'Pause no começo do lance e aperte "Início aqui" (I); depois no fim (O) e em "Adicionar corte" (A).';
+    d.innerHTML = 'Dê play, aperte <b>✂ Cortar</b> quando o lance começar e aperte de novo quando acabar. Ou arraste na barra de cima por cima do lance.';
   }
   d.classList.toggle('alerta-texto', !ok && !Number.isNaN(fim));
   $('#adicionarCorte').textContent = lives.sel != null ? '✓ Salvar alteração' : '＋ Adicionar corte';
@@ -284,18 +286,31 @@ function desenharZoom() {
 const tempoNoZoom = (x) => { const r = $('#zoomTempo').getBoundingClientRect(); return Math.max(0, Math.min(duracaoLive(), lives.zoomIni + ((x - r.left) / r.width) * ZOOM)); };
 
 let arrastandoAlca = null;
+let selecao = null; // arrastar na barra = marcar o corte
 $('#zoomTempo').addEventListener('pointerdown', (e) => {
   const alca = e.target.closest('[data-alca]');
+  e.currentTarget.setPointerCapture(e.pointerId);
   if (alca) {
     arrastandoAlca = alca.dataset.alca;
-    e.currentTarget.setPointerCapture(e.pointerId);
     video.pause();
     e.preventDefault();
     return;
   }
-  video.currentTime = tempoNoZoom(e.clientX);
+  selecao = { x0: e.clientX, t0: tempoNoZoom(e.clientX), ativa: false };
+  e.preventDefault();
 });
 $('#zoomTempo').addEventListener('pointermove', (e) => {
+  if (selecao) {
+    if (!selecao.ativa && Math.abs(e.clientX - selecao.x0) < 6) return;
+    if (!selecao.ativa) { selecao.ativa = true; video.pause(); }
+    const t = tempoNoZoom(e.clientX);
+    const a = Math.min(selecao.t0, t); const b = Math.max(selecao.t0, t);
+    $('#corteInicio').value = hms1(Math.round(a * 10) / 10);
+    $('#corteFim').value = hms1(Math.round(b * 10) / 10);
+    video.currentTime = t;
+    atualizarTrecho();
+    return;
+  }
   if (!arrastandoAlca) return;
   const t = Math.round(tempoNoZoom(e.clientX) * 10) / 10;
   const { ini, fim } = marcas();
@@ -304,7 +319,20 @@ $('#zoomTempo').addEventListener('pointermove', (e) => {
   video.currentTime = t; // mostra o quadro exato de onde a alça está
   atualizarTrecho();
 });
-$('#zoomTempo').addEventListener('pointerup', () => {
+$('#zoomTempo').addEventListener('pointerup', async () => {
+  if (selecao) {
+    const sel = selecao;
+    selecao = null;
+    if (!sel.ativa) { video.currentTime = sel.t0; return; }
+    const { ini, fim } = marcas();
+    if (!(fim - ini >= 1)) { $('#corteInicio').value = ''; $('#corteFim').value = ''; atualizarTrecho(); return toast('Arraste um pouco mais (pelo menos 1 s).', true); }
+    // foto do comeco do corte pra miniatura
+    video.currentTime = ini;
+    await new Promise((ok) => { video.addEventListener('seeked', ok, { once: true }); setTimeout(ok, 1500); });
+    lives.thumbInicio = fotoQuadro();
+    adicionarCorte();
+    return;
+  }
   if (arrastandoAlca === 'ini') lives.thumbInicio = null;
   arrastandoAlca = null;
 });
@@ -325,6 +353,7 @@ video.addEventListener('timeupdate', () => {
   if (!arrastandoAlca && (t < lives.zoomIni + 3 || t > lives.zoomIni + ZOOM - 3)) centralizarZoom(t);
   desenharZoom();
   seguirSequencia();
+  if (lives.cortandoDesde != null) { mostrarEstadoCorte(); $('#corteFim').value = hms1(video.currentTime); atualizarTrecho(); }
 });
 video.addEventListener('loadedmetadata', () => { centralizarZoom(video.currentTime); atualizarTrecho(); });
 
@@ -351,6 +380,40 @@ function marcarFim() {
   atualizarTrecho();
 }
 $('#marcarInicio').addEventListener('click', marcarInicio);
+
+function alternarCorte() {
+  if (lives.cortandoDesde == null) {
+    lives.cortandoDesde = video.currentTime;
+    $('#corteInicio').value = hms1(video.currentTime);
+    $('#corteFim').value = '';
+    lives.thumbInicio = fotoQuadro();
+    if (video.paused) video.play();
+  } else {
+    const ini = lives.cortandoDesde;
+    const fim = video.currentTime;
+    lives.cortandoDesde = null;
+    if (fim - ini < 1) { $('#corteInicio').value = ''; toast('Corte muito curto: deixe rolar pelo menos 1 s antes de apertar de novo.', true); }
+    else { $('#corteFim').value = hms1(fim); adicionarCorte(); }
+  }
+  mostrarEstadoCorte();
+}
+function mostrarEstadoCorte() {
+  const cortando = lives.cortandoDesde != null;
+  const b = $('#botaoCorte');
+  b.classList.toggle('gravando', cortando);
+  b.textContent = cortando ? '⏹ Terminar corte' : '✂ Cortar';
+  $('#seloGravando').hidden = !cortando;
+  if (cortando) $('#tempoGravando').textContent = tempo(Math.max(0, video.currentTime - lives.cortandoDesde));
+}
+$('#botaoCorte').addEventListener('click', alternarCorte);
+$('#desfazerCorte').addEventListener('click', () => {
+  if (!lives.seq.length) return;
+  lives.seq.pop();
+  lives.sel = null;
+  desenharSequencia();
+  atualizarTrecho();
+  toast('Último corte desfeito.');
+});
 $('#marcarFim').addEventListener('click', marcarFim);
 ['#corteInicio', '#corteFim'].forEach((s) => $(s).addEventListener('input', atualizarTrecho));
 
@@ -383,6 +446,10 @@ function adicionarCorte() {
   $('#corteFim').value = '';
   desenharSequencia();
   atualizarTrecho();
+  const ult = lives.seq[lives.seq.length - 1];
+  toast('✂ Corte ' + lives.seq.length + ' adicionado (' + tempo(ult.fim - ult.inicio) + '). Continue assistindo e corte o próximo.');
+  const faixa = $('#faixaCortes');
+  faixa.scrollLeft = faixa.scrollWidth;
 }
 $('#adicionarCorte').addEventListener('click', adicionarCorte);
 
@@ -392,11 +459,12 @@ function desenharSequencia() {
   const n = lives.seq.length;
   $('#sequenciaTotal').textContent = n
     ? `${n} parte(s) · ${tempo(total)} no total${total > 180 ? ' — passa de 3 min, no YouTube vira vídeo normal' : total > 90 ? ' — Reels do Facebook aceitam até 90 s' : ''}`
-    : 'arraste pra mudar a ordem';
+    : 'os cortes entram aqui, na ordem — arraste pra trocar';
   $('#totalBarra').textContent = n ? `${n} parte(s) · ${tempo(total)}` : 'Nenhum corte ainda';
   $('#salvarSequencia').disabled = !n;
   $('#salvarSeparados').disabled = lives.seq.filter((t) => t.tipo !== 'clipe').length < 2;
-  $('#salvarSequencia').textContent = n > 1 ? '💾 Salvar sequência como 1 vídeo' : '💾 Salvar clipe';
+  $('#salvarSequencia').textContent = n ? '💾 Salvar vídeo (' + n + (n > 1 ? ' cortes' : ' corte') + ' · ' + tempo(total) + ')' : '💾 Salvar vídeo';
+  $('#desfazerCorte').disabled = !n;
   $('#assistirSequencia').disabled = !n;
   faixa.innerHTML = n ? lives.seq.map((t, i) => {
     const tr = t.tr || { tipo: 'corte' };
@@ -665,6 +733,7 @@ $('#dlgLive').addEventListener('keydown', (e) => {
     i: marcarInicio,
     o: marcarFim,
     a: adicionarCorte,
+    c: alternarCorte,
   };
   if (acoes[k]) { e.preventDefault(); e.stopPropagation(); acoes[k](); }
 }, true);

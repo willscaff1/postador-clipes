@@ -688,3 +688,33 @@ body.editor #aba-contas::before { content: "Só o administrador conecta ou muda 
 .avaliar .ativa-bom { background: var(--ok-fundo); border-color: var(--ok); }
 .avaliar .ativa-ruim { background: var(--erro-fundo); border-color: var(--erro); }
 .momento { grid-template-columns: auto 190px 1fr 90px auto auto auto auto; }
+
+/* editor de lives simples */
+.dlg-live.simples { width: min(1320px, calc(100vw - 16px)); }
+.editor-simples { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-top: 10px; }
+.coluna-video { display: grid; gap: 10px; min-width: 0; }
+.coluna-lado { display: grid; gap: 10px; align-content: start; }
+.coluna-lado .campo { margin: 0; }
+.video-caixa { position: relative; }
+.selo-gravando { position: absolute; left: 12px; top: 12px; z-index: 4; background: #dc2626; color: #fff; font-weight: 800; font-size: 13px; padding: 4px 10px; border-radius: 8px; letter-spacing: .04em; animation: pulsar 1.4s infinite; }
+.zoom-tempo { height: 64px; }
+.zoom-dica { position: absolute; right: 8px; bottom: 4px; font-size: 11px; color: var(--suave); pointer-events: none; }
+.controle-corte { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.botao-corte { font-size: 17px; padding: 12px 28px; border-radius: 14px; min-width: 190px; }
+.botao-corte.gravando { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 0 0 4px rgba(220,38,38,.25); }
+.mais-opcoes { border: 1px solid var(--borda); border-radius: 12px; padding: 8px 12px; background: var(--cartao); }
+.mais-opcoes summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.mais-opcoes[open] summary { margin-bottom: 8px; }
+.mais-opcoes .painel-916 { border: 0; padding: 0; }
+.coluna-lado .previa-916-caixa canvas { width: 150px; height: 267px; }
+.trilha { margin-top: 12px; background: var(--cartao2); border: 1px solid var(--borda); border-radius: 14px; padding: 10px 12px; }
+.trilha .faixa-cortes { min-height: 128px; }
+.trilha .corte-card { width: 150px; }
+.barra-salvar .grande { padding: 12px 26px; }
+@media (max-width: 1000px) { .editor-simples { grid-template-columns: 1fr; } }
+.dlg-live.simples #videoLive { max-height: 40vh; }
+.dlg-live.simples .zoom-tempo { height: 54px; }
+.dlg-live.simples .trilha { margin-top: 8px; padding: 8px 10px; }
+.dlg-live.simples .trilha .faixa-cortes { min-height: 110px; padding-bottom: 4px; }
+.dlg-live.simples .corte-thumb { aspect-ratio: 16 / 8; }
+.dlg-live.simples .atalhos { display: none; }

@@ -339,14 +339,14 @@
     </form>
   </dialog>
 
-  <dialog id="dlgLive" class="dlg-live">
+  <dialog id="dlgLive" class="dlg-live simples">
     <form method="dialog">
       <div class="dlg-topo">
         <div><h2 id="liveTitulo">Live</h2><p class="dica" id="liveInfo"></p></div>
         <button value="fechar" class="sec icone" aria-label="Fechar">✕</button>
       </div>
-      <div class="editor-live">
-        <div class="player-live">
+      <div class="editor-simples">
+        <div class="coluna-video">
           <div class="video-caixa">
             <video id="videoLive" controls playsinline></video>
             <video id="videoExtra" class="video-extra" playsinline hidden></video>
@@ -354,101 +354,104 @@
               <div class="caixa-recorte jogo" data-caixa="jogo"><span>JOGO</span><i class="canto" data-canto="jogo"></i></div>
               <div class="caixa-recorte cam" data-caixa="cam"><span>CÂMERA</span><i class="canto" data-canto="cam"></i></div>
             </div>
+            <div class="selo-gravando" id="seloGravando" hidden>● CORTANDO <span id="tempoGravando">0:00</span></div>
           </div>
-          <div class="linha-tempo" id="linhaTempo"><div id="blocosTrechos"></div><div class="trecho marcando" id="trechoMarcado"></div><div class="agulha" id="agulha"></div></div>
-          <div class="zoom-tempo" id="zoomTempo" title="Zoom de 2 minutos em volta do ponto atual: arraste as alças pra ajustar o corte">
+          <div class="linha-tempo" id="linhaTempo" title="A live inteira: clique pra pular"><div id="blocosTrechos"></div><div class="trecho marcando" id="trechoMarcado"></div><div class="agulha" id="agulha"></div></div>
+          <div class="zoom-tempo" id="zoomTempo" title="Arraste por cima do lance pra cortar">
             <div class="zoom-escala" id="zoomEscala"></div>
             <div class="zoom-trecho" id="zoomTrecho"><span class="alca" data-alca="ini"></span><span class="alca" data-alca="fim"></span></div>
             <div class="agulha" id="zoomAgulha"></div>
+            <span class="zoom-dica">arraste aqui por cima do lance pra cortar</span>
           </div>
-          <div class="pulos">
-            <button type="button" class="sec mini" data-pulo="-60">−1 min</button>
-            <button type="button" class="sec mini" data-pulo="-10">−10 s</button>
-            <button type="button" class="sec mini" data-pulo="-2">−2 s</button>
-            <button type="button" class="sec mini" data-pulo="-0.0333" title="Quadro anterior (,)">◂ quadro</button>
-            <span class="relogio" id="relogioLive">0:00:00</span>
-            <button type="button" class="sec mini" data-pulo="0.0333" title="Próximo quadro (.)">quadro ▸</button>
-            <button type="button" class="sec mini" data-pulo="2">+2 s</button>
-            <button type="button" class="sec mini" data-pulo="10">+10 s</button>
-            <button type="button" class="sec mini" data-pulo="60">+1 min</button>
-          </div>
-          <div class="marcador">
-            <button type="button" class="sec" id="marcarInicio">[ Início aqui</button>
-            <input id="corteInicio" placeholder="0:00:00" aria-label="Início">
-            <span class="seta">→</span>
-            <input id="corteFim" placeholder="0:00:30" aria-label="Fim">
-            <button type="button" class="sec" id="marcarFim">Fim aqui ]</button>
-            <button type="button" id="adicionarCorte">＋ Adicionar corte</button>
-          </div>
-          <p class="atalhos">Atalhos: <kbd>Espaço</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> 1 s · <kbd>Shift</kbd>+<kbd>←</kbd><kbd>→</kbd> 10 s · <kbd>,</kbd><kbd>.</kbd> quadro · <kbd>I</kbd> início · <kbd>O</kbd> fim · <kbd>A</kbd> adicionar</p>
-          <p class="dica" id="corteDuracao">Pause no começo do lance e clique em "Início aqui"; depois no fim e em "Adicionar corte". Repita pra montar a sequência.</p>
-
-          <div class="sequencia">
-            <div class="sequencia-topo">
-              <b>Sequência de cortes</b>
-              <span class="dica" id="sequenciaTotal">arraste pra mudar a ordem</span>
-              <label class="mini-campo">Transição
-                <select id="transicaoPadrao">
-                  <option value="corte">✂ Corte seco</option><option value="fade" selected>◐ Dissolver</option><option value="fadeblack">■ Escurecer</option>
-                  <option value="fadewhite">□ Clarão</option><option value="slideleft">⇠ Deslizar</option><option value="slideup">⇡ Subir</option>
-                  <option value="smoothleft">↞ Empurrar</option><option value="zoomin">⊕ Zoom</option><option value="circleopen">◎ Círculo</option>
-                  <option value="pixelize">▦ Pixelado</option><option value="radial">◴ Radial</option><option value="wipeleft">▶ Cortina</option>
-                </select>
-                <select id="transicaoDuracao"><option value="0.3">0,3 s</option><option value="0.5" selected>0,5 s</option><option value="0.8">0,8 s</option><option value="1">1 s</option></select>
-              </label>
-              <button type="button" class="sec mini" id="botaoMeme">＋ Vídeo de fora (meme)</button>
-              <button type="button" class="sec mini" id="assistirSequencia">▶ Assistir a sequência</button>
+          <div class="controle-corte">
+            <div class="pulos">
+              <button type="button" class="sec mini" data-pulo="-10">−10 s</button>
+              <button type="button" class="sec mini" data-pulo="-2">−2 s</button>
+              <span class="relogio" id="relogioLive">0:00:00</span>
+              <button type="button" class="sec mini" data-pulo="2">+2 s</button>
+              <button type="button" class="sec mini" data-pulo="10">+10 s</button>
             </div>
-            <div class="faixa-cortes" id="faixaCortes"><div class="faixa-vazia">Os cortes que você adicionar aparecem aqui.</div></div>
+            <button type="button" id="botaoCorte" class="botao-corte">✂ Cortar</button>
+            <button type="button" id="desfazerCorte" class="sec mini" disabled>↶ Desfazer</button>
+          </div>
+          <p class="dica" id="corteDuracao">Dê play, aperte <b>✂ Cortar</b> quando o lance começar e aperte de novo quando acabar. Ou arraste na barra de cima por cima do lance.</p>
+          <p class="atalhos"><kbd>Espaço</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> 1 s · <kbd>C</kbd> cortar</p>
+          <div hidden>
+            <button type="button" id="marcarInicio"></button><input id="corteInicio"><input id="corteFim"><button type="button" id="marcarFim"></button><button type="button" id="adicionarCorte"></button>
           </div>
         </div>
-        <div class="corte-live">
-          <h3>Salvar</h3>
-          <label class="campo">Nome do clipe <input id="corteNome" maxlength="120"></label>
+
+        <div class="coluna-lado">
+          <span class="rotulo-campo">Formato do vídeo</span>
           <div class="formatos-saida">
-            <span class="rotulo-campo">Salvar em</span>
             <label class="chip-check"><input type="checkbox" id="saida916" checked> 📱 9:16 celular</label>
-            <label class="chip-check"><input type="checkbox" id="saida169"> 🖥 16:9 original</label>
+            <label class="chip-check"><input type="checkbox" id="saida169"> 🖥 16:9 YouTube</label>
           </div>
-          <div id="painel916" class="painel-916">
-            <label class="campo">Layout do 9:16
-              <select id="layoutModo">
-                <option value="faixa-topo">Câmera em cima + jogo</option>
-                <option value="faixa-baixo">Jogo + câmera embaixo</option>
-                <option value="sobre">Câmera sobre o jogo (redonda, quadrada…)</option>
-                <option value="sem-camera">Sem câmera (só o jogo)</option>
-                <option value="desfocado">Tela inteira com fundo desfocado</option>
-                <option value="cortado">Só o centro da tela</option>
+          <div class="previa-916-caixa" id="previaLado"><canvas id="previa916" width="270" height="480"></canvas><span class="dica" id="previaDica">assim fica no celular</span></div>
+          <label class="campo">Nome do vídeo <input id="corteNome" maxlength="120"></label>
+          <details class="mais-opcoes">
+            <summary>🎛 Ajustar o layout do celular</summary>
+            <div id="painel916" class="painel-916">
+              <label class="campo">Layout
+                <select id="layoutModo">
+                  <option value="faixa-topo">Câmera em cima + jogo</option>
+                  <option value="faixa-baixo">Jogo + câmera embaixo</option>
+                  <option value="sobre">Câmera sobre o jogo (redonda, quadrada…)</option>
+                  <option value="sem-camera">Sem câmera (só o jogo)</option>
+                  <option value="desfocado">Tela inteira com fundo desfocado</option>
+                  <option value="cortado">Só o centro da tela</option>
+                </select>
+              </label>
+              <div class="op-layout" data-para="faixa-topo faixa-baixo">
+                <label class="campo">Altura da câmera <span id="valorProporcao" class="dica">35%</span><input type="range" id="layoutProporcao" min="20" max="55" value="35"></label>
+              </div>
+              <div class="op-layout" data-para="sobre">
+                <span class="rotulo-campo">Formato da câmera</span>
+                <div class="grupo-botoes" id="layoutForma">
+                  <button type="button" data-forma="redonda">● Redonda</button>
+                  <button type="button" data-forma="quadrada">▢ Quadrada</button>
+                  <button type="button" data-forma="retangular">▭ Retangular</button>
+                </div>
+                <label class="campo">Tamanho <span id="valorTamanho" class="dica">45%</span><input type="range" id="layoutTamanho" min="15" max="90" value="45"></label>
+                <label class="campo">Borda
+                  <select id="layoutBorda"><option value="branca">Branca</option><option value="roxa">Roxa</option><option value="preta">Preta</option><option value="nenhuma">Sem borda</option></select>
+                </label>
+                <p class="dica">Arraste a câmera na prévia pra mudar de lugar.</p>
+              </div>
+              <label class="check op-layout" data-para="faixa-topo faixa-baixo sobre sem-camera"><input type="checkbox" id="layoutEsconder" checked> Esconder a câmera que aparece dentro do jogo</label>
+              <button type="button" class="sec op-layout" id="ajustarRecortes" data-para="faixa-topo faixa-baixo sobre sem-camera">✥ Ajustar recortes no vídeo</button>
+            </div>
+          </details>
+          <details class="mais-opcoes">
+            <summary>✨ Transição e meme</summary>
+            <label class="campo">Transição entre os cortes
+              <select id="transicaoPadrao">
+                <option value="corte">✂ Corte seco</option><option value="fade" selected>◐ Dissolver</option><option value="fadeblack">■ Escurecer</option>
+                <option value="fadewhite">□ Clarão</option><option value="slideleft">⇠ Deslizar</option><option value="slideup">⇡ Subir</option>
+                <option value="smoothleft">↞ Empurrar</option><option value="zoomin">⊕ Zoom</option><option value="circleopen">◎ Círculo</option>
+                <option value="pixelize">▦ Pixelado</option><option value="radial">◴ Radial</option><option value="wipeleft">▶ Cortina</option>
               </select>
             </label>
-            <div class="previa-916-caixa"><canvas id="previa916" width="270" height="480"></canvas><span class="dica" id="previaDica">prévia do celular</span></div>
-            <div class="op-layout" data-para="faixa-topo faixa-baixo">
-              <label class="campo">Altura da câmera <span id="valorProporcao" class="dica">35%</span><input type="range" id="layoutProporcao" min="20" max="55" value="35"></label>
-            </div>
-            <div class="op-layout" data-para="sobre">
-              <span class="rotulo-campo">Formato da câmera</span>
-              <div class="grupo-botoes" id="layoutForma">
-                <button type="button" data-forma="redonda">● Redonda</button>
-                <button type="button" data-forma="quadrada">▢ Quadrada</button>
-                <button type="button" data-forma="retangular">▭ Retangular</button>
-              </div>
-              <label class="campo">Tamanho <span id="valorTamanho" class="dica">45%</span><input type="range" id="layoutTamanho" min="15" max="90" value="45"></label>
-              <label class="campo">Borda
-                <select id="layoutBorda"><option value="branca">Branca</option><option value="roxa">Roxa</option><option value="preta">Preta</option><option value="nenhuma">Sem borda</option></select>
-              </label>
-              <p class="dica">Arraste a câmera na prévia pra mudar de lugar.</p>
-            </div>
-            <label class="check op-layout" data-para="faixa-topo faixa-baixo sobre sem-camera"><input type="checkbox" id="layoutEsconder" checked> Esconder a câmera que aparece dentro do jogo</label>
-            <button type="button" class="sec op-layout" id="ajustarRecortes" data-para="faixa-topo faixa-baixo sobre sem-camera">✥ Ajustar recortes no vídeo</button>
-          </div>
-          <p class="dica">A sequência vira um vídeo só, na ordem da faixa e com as transições escolhidas. Vai pra aba Clipes pronta pra postar.</p>
+            <select id="transicaoDuracao" hidden><option value="0.5" selected>0,5 s</option></select>
+            <button type="button" class="sec mini" id="botaoMeme">＋ Colocar vídeo de fora (meme)</button>
+          </details>
           <div id="cortesFeitos" class="cortes-feitos"></div>
         </div>
       </div>
+
+      <div class="trilha">
+        <div class="sequencia-topo">
+          <b>🎞 Seu vídeo</b>
+          <span class="dica" id="sequenciaTotal">os cortes entram aqui, na ordem — arraste pra trocar</span>
+          <button type="button" class="sec mini" id="assistirSequencia">▶ Assistir tudo</button>
+        </div>
+        <div class="faixa-cortes" id="faixaCortes"><div class="faixa-vazia">Nenhum corte ainda. Aperte ✂ Cortar no começo do lance e de novo no fim.</div></div>
+      </div>
+
       <div class="barra-salvar">
         <span id="totalBarra" class="dica">Nenhum corte ainda</span>
-        <button type="button" id="salvarSeparados" class="sec" disabled>Salvar cada corte separado</button>
-        <button type="button" id="salvarSequencia" disabled>💾 Salvar sequência como 1 vídeo</button>
+        <button type="button" id="salvarSeparados" class="link-base" disabled>salvar cada corte separado</button>
+        <button type="button" id="salvarSequencia" class="grande" disabled>💾 Salvar vídeo</button>
       </div>
     </form>
   </dialog>

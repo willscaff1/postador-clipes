@@ -47,6 +47,7 @@ function ajustarCaixa(qual, ancora = 'centro') {
 // ---------- controles ----------
 function mostrarControles() {
   $('#painel916').hidden = !$('#saida916').checked;
+  if ($('#previaLado')) $('#previaLado').hidden = !$('#saida916').checked;
   $('#layoutModo').value = layout.modo;
   $('#layoutProporcao').value = Math.round(layout.proporcao * 100);
   $('#valorProporcao').textContent = Math.round(layout.proporcao * 100) + '%';
